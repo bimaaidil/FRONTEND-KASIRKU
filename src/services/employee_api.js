@@ -2,22 +2,59 @@ import axios from 'axios';
 
 const API_URL = 'http://127.0.0.1:5000/api/karyawan';
 
+// --- AMBIL SEMUA DATA KARYAWAN ---
 export const getEmployees = async () => {
-  const response = await axios.get(API_URL);
-  return response.data;
+  try {
+    const response = await axios.get(API_URL);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    throw error;
+  }
 };
 
+// --- TAMBAH KARYAWAN BARU ---
 export const addEmployee = async (data) => {
-  const response = await axios.post(API_URL, data);
-  return response.data;
+  try {
+    const response = await axios.post(API_URL, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error adding employee:", error);
+    throw error;
+  }
 };
 
+// --- UPDATE DATA KARYAWAN (EDIT) ---
 export const updateEmployee = async (id, data) => {
-  const response = await axios.put(`${API_URL}/${id}`, data);
-  return response.data;
+  try {
+    const response = await axios.put(`${API_URL}/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating employee:", error);
+    throw error;
+  }
 };
 
+// --- UPDATE STATUS KARYAWAN (VERIFIKASI) ---
+// Fungsi ini yang dipanggil oleh tombol "Verifikasi" di halaman kelola
+export const updateEmployeeStatus = async (id, status) => {
+  try {
+    // Kita mengirim object { status: 'AKTIF' } ke backend
+    const response = await axios.put(`${API_URL}/${id}/status`, { status });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating employee status:", error);
+    throw error;
+  }
+};
+
+// --- HAPUS KARYAWAN ---
 export const deleteEmployee = async (id) => {
-  const response = await axios.delete(`${API_URL}/${id}`);
-  return response.data;
+  try {
+    const response = await axios.delete(`${API_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    throw error;
+  }
 };

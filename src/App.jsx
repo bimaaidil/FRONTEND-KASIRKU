@@ -22,9 +22,10 @@ import RekapHarian from './pages/RekapHarian';
 import RekapBulanan from './pages/RekapBulanan';
 import RekapKas from './pages/RekapKas';
 import DetailKas from './pages/DetailKas';
-
-// --- 1. IMPORT HALAMAN PREDIKSI (BARU) ---
 import PrediksiStok from './pages/PrediksiStok';
+
+// --- IMPORT HALAMAN STOK OPNAME (BARU) ---
+import StokOpname from './pages/StokOpname';
 
 function App() {
   return (
@@ -43,6 +44,9 @@ function App() {
         <Route path="/tambah-produk" element={<TambahProduk />} />
         <Route path="/kelola-produk/edit/:id" element={<EditProduk />} />
 
+        {/* --- ROUTE STOK OPNAME (BARU) --- */}
+        <Route path="/stok-opname" element={<StokOpname />} />
+
         <Route path="/transaksi" element={<Transaksi />} />
         <Route path="/keranjang" element={<Keranjang />} />
         <Route path="/pembayaran" element={<Pembayaran />} />
@@ -54,10 +58,7 @@ function App() {
         <Route path="/rekap-kas" element={<RekapKas />} />
         <Route path="/detail-kas" element={<DetailKas />} />
 
-        {/* --- 2. ROUTE HALAMAN PREDIKSI (BARU) --- */}
-        {/* Pastikan link di Sidebar mengarah ke "/prediksi" */}
         <Route path="/prediksi" element={<PrediksiStok />} />
-
       </Routes>
     </Router>
   );

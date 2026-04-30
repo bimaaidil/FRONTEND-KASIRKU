@@ -1,4 +1,3 @@
-// src/pages/Tunai.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -26,7 +25,30 @@ const Tunai = () => {
     }
     const change = amount - totalPrice;
     
-    // Simpan data transaksi sementara untuk ditampilkan di halaman sukses
+    // --- LOGIKA BARU: SIMPAN KE REKAP HARIAN ---
+    const savedCart = JSON.parse(localStorage.getItem('cartData')) || [];
+    const now = new Date();
+    const dayName = now.toLocaleDateString('id-ID', { weekday: 'long' });
+    const fullDate = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const existingHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
+
+    // Ubah format keranjang jadi format baris rekap
+    const newRecords = savedCart.map(item => ({
+        id: Date.now() + Math.random(),
+        day: dayName,      // Untuk filter hari
+        date: fullDate,    // Untuk kolom tanggal
+        product: item.name,
+        qty: item.qty,
+        price: item.price,
+        subtotal: item.price * item.qty
+    }));
+
+    // Simpan history transaksi
+    localStorage.setItem('historyTransaksi', JSON.stringify([...newRecords, ...existingHistory]));
+    // ------------------------------------------
+
+    // Simpan data transaksi sukses untuk struk
     const transactionData = {
         totalPrice: totalPrice,
         receivedAmount: amount,
@@ -35,16 +57,13 @@ const Tunai = () => {
     };
     localStorage.setItem('lastTransaction', JSON.stringify(transactionData));
     
-    // Kosongkan keranjang karena transaksi dianggap selesai
+    // Kosongkan keranjang
     localStorage.removeItem('cartData');
     
-    // Arahkan ke halaman sukses
     navigate('/transaksi-sukses');
   };
 
-  const handleQuickAmount = (amount) => {
-    setReceivedAmount(amount);
-  };
+  const handleQuickAmount = (amount) => { setReceivedAmount(amount); };
 
   const quickAmounts = [
     totalPrice, 

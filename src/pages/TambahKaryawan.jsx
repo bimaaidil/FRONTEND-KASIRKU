@@ -11,26 +11,36 @@ const TambahKaryawan = () => {
     nama: '',
     posisi: 'Kasir',
     no_hp: '',
-    alamat: ''
+    alamat: '',
+    status: 'AKTIF' // SET DEFAULT AKTIF karena diinput langsung oleh Admin
   });
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validasi sederhana agar data tidak kosong
+    if (!formData.nama || !formData.no_hp) {
+        alert("Nama dan No Handphone wajib diisi!");
+        return;
+    }
+
     setLoading(true);
     try {
+      // Mengirim data ke backend dengan status AKTIF
       await addEmployee(formData);
-      alert("Karyawan berhasil ditambahkan!");
+      alert("Karyawan berhasil ditambahkan secara langsung!");
       navigate('/kelola-karyawan');
     } catch (error) {
+      console.error("Error:", error);
       alert("Gagal menambahkan karyawan");
     } finally {
       setLoading(false);
     }
   };
 
-  // Styles (Copy dari TambahProduk biar konsisten)
+  // Styles konsisten dengan sistem Kasirku
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
     sidebar: { width: '260px', backgroundColor: '#154784', color: 'white', display: 'flex', flexDirection: 'column', padding: '20px', position: 'fixed', height: '100vh', zIndex: 10 },
@@ -90,11 +100,11 @@ const TambahKaryawan = () => {
                 <div style={styles.formGrid}>
                     <div style={styles.fullWidthGroup}>
                         <label style={styles.label}>Nama Lengkap</label>
-                        <input type="text" name="nama" placeholder="Contoh: Budi Santoso" style={styles.input} onChange={handleChange} />
+                        <input type="text" name="nama" placeholder="Contoh: Budi Santoso" style={styles.input} onChange={handleChange} required />
                     </div>
                     <div style={styles.formGroup}>
                         <label style={styles.label}>Posisi</label>
-                        <select name="posisi" style={styles.select} onChange={handleChange}>
+                        <select name="posisi" style={styles.select} onChange={handleChange} value={formData.posisi}>
                             <option value="Kasir">Kasir</option>
                             <option value="Admin">Admin</option>
                             <option value="Manager">Manager</option>
@@ -102,7 +112,7 @@ const TambahKaryawan = () => {
                     </div>
                     <div style={styles.formGroup}>
                         <label style={styles.label}>No Handphone</label>
-                        <input type="text" name="no_hp" placeholder="0812..." style={styles.input} onChange={handleChange} />
+                        <input type="text" name="no_hp" placeholder="0812..." style={styles.input} onChange={handleChange} required />
                     </div>
                     <div style={styles.fullWidthGroup}>
                         <label style={styles.label}>Alamat</label>

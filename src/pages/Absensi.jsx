@@ -1,92 +1,128 @@
 // src/pages/Absensi.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut } from "firebase/auth";
-import { auth } from '../config/firebase';
-import logoImg from '../assets/LogoKasir.jpg'; 
+import axios from 'axios'; 
+import Sidebar from '../components/Sidebar';
 
 // Import API
 import { getEmployees } from '../services/employee_api'; 
-import { getAttendance, clockIn, clockOut } from '../services/attendance_api';
+import { getAttendance, clockOut } from '../services/attendance_api'; 
 
-import { FaUserFriends, FaBox, FaExchangeAlt, FaFileAlt, FaSignOutAlt, FaCalendarCheck, FaChartLine, FaClock, FaCheckCircle } from 'react-icons/fa';
+// Icons
+import { FaSignOutAlt, FaClock, FaCheckCircle, FaPrint, FaBriefcase, FaChartLine } from 'react-icons/fa';
 import { Loader } from 'lucide-react';
 
 const Absensi = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
-  // Data State
-  const [employees, setEmployees] = useState([]); // Daftar Karyawan
-  const [attendanceList, setAttendanceList] = useState([]); // Riwayat Absen
-  const [selectedEmp, setSelectedEmp] = useState(''); // ID Karyawan yang dipilih
-  const [statusHariIni, setStatusHariIni] = useState('BELUM_ABSEN');
+  // Ambil Data Role & Nama dari Login
+  const userRole = localStorage.getItem('userRole');
+  const userName = localStorage.getItem('userName');
 
-  // --- [PERBAIKAN UTAMA] FUNGSI LOAD DATA DIPISAH ---
+  // --- STATE DATA ---
+  const [employees, setEmployees] = useState([]); 
+  const [attendanceList, setAttendanceList] = useState([]); 
+  const [selectedEmp, setSelectedEmp] = useState(''); 
+  
+  const [statusTombol, setStatusTombol] = useState('MASUK_REGULER'); 
+  const [waktuSekarang, setWaktuSekarang] = useState(new Date());
+
+  // --- STATE REKAP (ADMIN ONLY) ---
+  const [bulanPilihan, setBulanPilihan] = useState(new Date().toISOString().slice(0, 7)); 
+  const [dataRekap, setDataRekap] = useState([]);
+  const [loadingRekap, setLoadingRekap] = useState(false);
+
+  // --- 1. LOAD DATA HARIAN ---
   const loadData = async () => {
     setLoading(true);
-    
-    // 1. AMBIL DATA KARYAWAN (PASTI JALAN)
     try {
       const empData = await getEmployees();
-      setEmployees(empData);
-    } catch (error) {
-      console.error("Gagal ambil karyawan:", error);
+      
+      // LOGIKA FILTER DROPDOWN: Karyawan hanya melihat namanya sendiri
+      const filteredEmps = empData.filter(emp => {
+        if (userRole === 'Admin') return false; 
+        return emp.nama === userName; 
+      });
+
+      setEmployees(filteredEmps);
+
+      // AUTO-SELECT untuk Karyawan
+      if (filteredEmps.length > 0) {
+        setSelectedEmp(filteredEmps[0].id);
+      }
+
+    } catch (error) { 
+      console.error("Gagal ambil karyawan:", error); 
     }
 
-    // 2. AMBIL DATA ABSENSI (KALAU ERROR, TIDAK GANGGU KARYAWAN)
     try {
       const attData = await getAttendance();
       setAttendanceList(attData);
+    } catch (error) { 
+      setAttendanceList([]); 
+    } finally { setLoading(false); }
+  };
+
+  // --- 2. LOAD DATA REKAP (ADMIN ONLY) ---
+  const fetchRekap = async () => {
+    if (!bulanPilihan || userRole !== 'Admin') return;
+    setLoadingRekap(true);
+    try {
+      const response = await axios.get(`http://127.0.0.1:5000/api/absensi/rekap-bulanan?bulan=${bulanPilihan}`);
+      setDataRekap(response.data);
     } catch (error) {
-      console.error("Gagal ambil absensi (Mungkin DB Kosong/Rusak):", error);
-      setAttendanceList([]); // Set kosong biar tidak crash
+      console.error("Gagal ambil rekap:", error);
     } finally {
-      setLoading(false);
+      setLoadingRekap(false);
     }
   };
 
   useEffect(() => {
     loadData();
+    const timer = setInterval(() => { setWaktuSekarang(new Date()); }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // --- CEK STATUS ---
   useEffect(() => {
-    if (!selectedEmp) {
-        setStatusHariIni('BELUM_ABSEN');
-        return;
-    }
-    // Cek status hari ini
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    
-    const myAttendance = attendanceList.find(
-        a => a.employee_id === selectedEmp && a.date === today
-    );
+    fetchRekap();
+  }, [bulanPilihan, attendanceList]);
 
-    if (myAttendance) {
-        if (myAttendance.clock_out === '-') {
-            setStatusHariIni('BEKERJA');
-        } else {
-            setStatusHariIni('SELESAI');
-        }
+  // --- LOGIKA PENENTUAN STATUS TOMBOL ---
+  useEffect(() => {
+    if (!selectedEmp) { setStatusTombol('MASUK_REGULER'); return; }
+    const todayStr = waktuSekarang.toISOString().split('T')[0];
+    const myAtts = attendanceList.filter(a => a.employee_id === selectedEmp && a.date === todayStr);
+    const reguler = myAtts.find(a => !a.jenis || a.jenis === 'Reguler');
+    const lembur = myAtts.find(a => a.jenis === 'Lembur');
+
+    if (!reguler) {
+        setStatusTombol('MASUK_REGULER');
+    } else if (reguler.clock_out === '-') {
+        setStatusTombol('PULANG_REGULER');
     } else {
-        setStatusHariIni('BELUM_ABSEN');
+        if (!lembur) {
+            setStatusTombol('MASUK_LEMBUR');
+        } else if (lembur.clock_out === '-') {
+            setStatusTombol('PULANG_LEMBUR');
+        } else {
+            setStatusTombol('SELESAI_TOTAL');
+        }
     }
-  }, [selectedEmp, attendanceList]);
+  }, [selectedEmp, attendanceList, waktuSekarang]);
 
-  // --- HANDLE TOMBOL ---
-  const handleClockIn = async () => {
+  const handleClockIn = async (jenis) => {
     if (!selectedEmp) return alert("Pilih nama Anda dulu!");
     const empObj = employees.find(e => e.id === selectedEmp);
-    
     try {
-        await clockIn(selectedEmp, empObj.nama);
-        alert(`Selamat bekerja, ${empObj.nama}!`);
+        await axios.post('http://127.0.0.1:5000/api/absensi/clock-in', {
+            employee_id: selectedEmp,
+            employee_name: empObj.nama,
+            jenis_absen: jenis 
+        });
+        alert(jenis === 'Lembur' ? `Semangat Lemburnya, ${empObj.nama}!` : `Selamat bekerja, ${empObj.nama}!`);
         loadData(); 
-    } catch (error) {
-        alert(error.response?.data?.error || "Gagal absen masuk");
-    }
+    } catch (error) { alert(error.response?.data?.error || "Gagal absen masuk"); }
   };
 
   const handleClockOut = async () => {
@@ -95,155 +131,218 @@ const Absensi = () => {
         await clockOut(selectedEmp);
         alert("Hati-hati di jalan!");
         loadData(); 
-    } catch (error) {
-        alert(error.response?.data?.error || "Gagal absen pulang");
-    }
+    } catch (error) { alert(error.response?.data?.error || "Gagal absen pulang"); }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/');
-  };
-
-  // --- STYLES (TIDAK BERUBAH) ---
+  // Styles
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
-    sidebar: { width: '260px', backgroundColor: '#154784', color: 'white', display: 'flex', flexDirection: 'column', padding: '20px', position: 'fixed', height: '100vh', zIndex: 10 },
-    logoSection: { display: 'flex', alignItems: 'center', marginBottom: '25px', gap: '12px' },
-    menuSectionTitle: { fontSize: '11px', color: '#a0c4eb', marginTop: '12px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', paddingLeft: '5px' },
-    menuItem: { padding: '8px 12px', marginBottom: '2px', borderRadius: '6px', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', transition: '0.2s' },
-    activeMenu: { backgroundColor: '#427dfc', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', fontWeight: '600' }, 
-    divider: { borderBottom: '1px solid rgba(255,255,255,0.1)', margin: '8px 0' },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', backgroundColor: '#F5F6FA' },
+    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', paddingBottom: '100px' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' },
     pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937' },
     actionCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' },
-    select: { padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: '300px', outline: 'none' },
+    select: { padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: '300px', outline: 'none', backgroundColor: '#f9fafb' },
     btnIn: { backgroundColor: '#2563eb', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
     btnOut: { backgroundColor: '#dc2626', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
+    btnLembur: { backgroundColor: '#f59e0b', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
     btnDone: { backgroundColor: '#16a34a', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'not-allowed', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
-    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' },
+    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', marginBottom: '40px' },
+    rekapCard: { backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderTop: '5px solid #154784' }, 
     tableHeader: { textAlign: 'left', padding: '16px', fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' },
     tableCell: { padding: '16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #f9fafb' },
+    badgeReg: { backgroundColor: '#dbeafe', color: '#1e40af', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' },
+    badgeLembur: { backgroundColor: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' },
+    totalBadge: { backgroundColor: '#dbeafe', color: '#1e40af', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px' },
+    rekapHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    monthInput: { padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none' }
   };
 
   return (
     <div style={styles.container}>
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <div style={styles.logoSection}>
-          <img src={logoImg} alt="Logo" style={{ width: '35px', borderRadius: '5px' }} />
-          <h4 className="m-0 fw-bold" style={{ fontSize: '18px' }}>Kasirku</h4>
-        </div>
-        <div style={styles.divider}></div>
-        {/* Menu Aktif */}
-        <div style={{...styles.menuItem, ...styles.activeMenu}}><FaCalendarCheck size={16} /> <span>Absensi</span></div>
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Fitur Cerdas</div>
-        <div style={styles.menuItem} onClick={() => navigate('/prediksi')}><FaChartLine size={14} /> <span>Prediksi Stok</span></div>
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Karyawan</div>
-        <div style={styles.menuItem} onClick={() => navigate('/kelola-karyawan')}><FaUserFriends size={14} /> <span>Kelola Karyawan</span></div>
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Barang</div>
-        <div style={styles.menuItem} onClick={() => navigate('/kelola-produk')}><FaBox size={14} /> <span>Kelola Produk</span></div>
-        <div style={styles.menuItem} onClick={() => navigate('/transaksi')}><FaExchangeAlt size={14} /> <span>Transaksi</span></div>  
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Laporan</div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-harian')}><FaFileAlt size={14} /> <span>Rekap Harian</span></div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-bulanan')}><FaFileAlt size={14} /> <span>Rekap Bulanan</span></div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-kas')}><FaFileAlt size={14} /> <span>Rekap Kas</span></div>
-        <div style={{ marginTop: 'auto', cursor: 'pointer', ...styles.menuItem }} onClick={handleLogout}><FaSignOutAlt /> <span>Keluar</span></div>
-      </div>
+      <Sidebar />
 
-      {/* MAIN CONTENT */}
       <div style={styles.mainContent}>
         <div style={styles.header}>
-          <h2 style={styles.pageTitle}>Absensi Harian</h2>
-          <div style={{fontSize: '14px', color: '#6b7280'}}>
-            {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <div>
+             <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
+             <p style={{margin:0, fontSize:'14px', color:'#6b7280'}}>Selamat Datang, <strong>{userName}</strong></p>
+          </div>
+          <div style={{fontSize: '14px', color: '#6b7280', textAlign:'right'}}>
+            {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
+             <br /> 
+            {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
           </div>
         </div>
 
-        {/* CARD INPUT ABSEN */}
+        {/* BAGIAN ABSENSI */}
         <div style={styles.actionCard}>
             <div>
-                <label style={{display: 'block', marginBottom: '8px', fontWeight: '500', color: '#374151'}}>Siapa Anda?</label>
-                <select 
-                    style={styles.select} 
-                    value={selectedEmp} 
-                    onChange={(e) => setSelectedEmp(e.target.value)}
-                >
-                    <option value="">-- Pilih Nama Karyawan --</option>
-                    {employees.map(emp => (
-                        <option key={emp.id} value={emp.id}>{emp.nama} - {emp.posisi}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div>
-                {/* Logika Tombol Berubah Sesuai Status */}
-                {statusHariIni === 'BELUM_ABSEN' && (
-                    <button style={styles.btnIn} onClick={handleClockIn}>
-                        <FaClock /> ABSEN MASUK
-                    </button>
-                )}
+                <label style={{display: 'block', marginBottom: '8px', fontWeight: '500', color: '#374151'}}>
+                  {userRole === 'Admin' ? 'Admin Monitoring' : 'Konfirmasi Kehadiran'}
+                </label>
                 
-                {statusHariIni === 'BEKERJA' && (
-                    <button style={styles.btnOut} onClick={handleClockOut}>
-                        <FaSignOutAlt /> ABSEN PULANG
-                    </button>
-                )}
-
-                {statusHariIni === 'SELESAI' && (
-                    <button style={styles.btnDone} disabled>
-                        <FaCheckCircle /> SUDAH SELESAI
-                    </button>
+                {userRole === 'Admin' ? (
+                  <div style={{color: '#6b7280', fontSize: '14px', padding: '10px 0'}}>
+                    Akun Admin tidak diperlukan untuk absen fisik harian.
+                  </div>
+                ) : (
+                  <select style={styles.select} value={selectedEmp} onChange={(e) => setSelectedEmp(e.target.value)}>
+                      {employees.length === 0 ? (
+                        <option value="">Nama Anda tidak terdaftar</option>
+                      ) : (
+                        employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.nama} - {emp.posisi}</option>
+                        ))
+                      )}
+                  </select>
                 )}
             </div>
+            
+            {userRole !== 'Admin' && (
+              <div>
+                  {statusTombol === 'MASUK_REGULER' && (
+                      <button style={styles.btnIn} onClick={() => handleClockIn('Reguler')}>
+                          <FaClock /> ABSEN MASUK
+                      </button>
+                  )}
+                  {statusTombol === 'PULANG_REGULER' && (
+                      <button style={styles.btnOut} onClick={handleClockOut}>
+                          <FaSignOutAlt /> PULANG SHIFT
+                      </button>
+                  )}
+                  {statusTombol === 'MASUK_LEMBUR' && (
+                      <div style={{display:'flex', alignItems:'center', gap: '15px'}}>
+                          <span style={{color:'#059669', fontWeight:'bold', fontSize:'13px'}}>Shift Selesai ✅</span>
+                          <button style={styles.btnLembur} onClick={() => handleClockIn('Lembur')}>
+                              <FaBriefcase /> MULAI LEMBUR
+                          </button>
+                      </div>
+                  )}
+                  {statusTombol === 'PULANG_LEMBUR' && (
+                      <button style={styles.btnOut} onClick={handleClockOut}>
+                          <FaSignOutAlt /> SELESAI LEMBUR
+                      </button>
+                  )}
+                  {statusTombol === 'SELESAI_TOTAL' && (
+                      <button style={styles.btnDone} disabled>
+                          <FaCheckCircle /> TOTAL SELESAI
+                      </button>
+                  )}
+              </div>
+            )}
         </div>
 
-        {/* TABEL RIWAYAT */}
+        {/* RIWAYAT HARIAN (DIFILTER BERDASARKAN PRIVASI) */}
         <div style={styles.card}>
-            <h3 style={{fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937'}}>Riwayat Kehadiran</h3>
-            
-            {loading ? (
-                <div style={{textAlign: 'center', padding: '20px'}}><Loader className="animate-spin" /></div>
-            ) : attendanceList.length === 0 ? (
-                <div style={{textAlign: 'center', padding: '20px', color: '#6b7280'}}>Belum ada data absensi.</div>
-            ) : (
+            <h3 style={{fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937'}}>
+               {userRole === 'Admin' ? 'Riwayat Hari Ini (Semua)' : 'Riwayat Absensi Saya'}
+            </h3>
+            {loading ? <div style={{textAlign: 'center', padding: '20px'}}><Loader className="animate-spin" /></div> : 
+             attendanceList.length === 0 ? <div style={{textAlign: 'center', color: '#9ca3af'}}>Belum ada riwayat hari ini.</div> : (
                 <table style={{width: '100%', borderCollapse: 'collapse'}}>
                     <thead>
                         <tr>
                             <th style={styles.tableHeader}>Tanggal</th>
-                            <th style={styles.tableHeader}>Nama Karyawan</th>
-                            <th style={styles.tableHeader}>Jam Masuk</th>
-                            <th style={styles.tableHeader}>Jam Pulang</th>
+                            <th style={styles.tableHeader}>Nama</th>
+                            <th style={styles.tableHeader}>Jenis</th>
+                            <th style={styles.tableHeader}>Masuk</th>
+                            <th style={styles.tableHeader}>Pulang</th>
                             <th style={styles.tableHeader}>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {attendanceList.map((item) => (
+                        {attendanceList
+                          .filter(item => {
+                            // JIKA ADMIN: Tampilkan semua
+                            if (userRole === 'Admin') return true;
+                            // JIKA KARYAWAN: Hanya tampilkan milik sendiri
+                            return item.employee_name === userName;
+                          })
+                          .slice(0, 5)
+                          .map((item) => ( 
                             <tr key={item.id} style={{borderBottom: '1px solid #f9fafb'}}>
                                 <td style={styles.tableCell}>{item.date}</td>
                                 <td style={{...styles.tableCell, fontWeight: '500'}}>{item.employee_name}</td>
-                                <td style={{...styles.tableCell, color: '#2563eb'}}>{item.clock_in}</td>
-                                <td style={{...styles.tableCell, color: '#dc2626'}}>{item.clock_out}</td>
                                 <td style={styles.tableCell}>
-                                    <span style={{
-                                        backgroundColor: item.status === 'Bekerja' ? '#dbeafe' : '#dcfce7',
-                                        color: item.status === 'Bekerja' ? '#1e40af' : '#166534',
-                                        padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold'
-                                    }}>
-                                        {item.status.toUpperCase()}
+                                    <span style={(!item.jenis || item.jenis === 'Reguler') ? styles.badgeReg : styles.badgeLembur}>
+                                        {(!item.jenis ? 'REGULER' : item.jenis.toUpperCase())}
                                     </span>
                                 </td>
+                                <td style={{...styles.tableCell, color: '#2563eb'}}>{item.clock_in}</td>
+                                <td style={{...styles.tableCell, color: '#dc2626'}}>{item.clock_out}</td>
+                                <td style={styles.tableCell}>{item.status}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             )}
         </div>
+
+        {/* AREA MONITORING PEMILIK (ADMIN ONLY) */}
+        {userRole === 'Admin' && (
+          <>
+            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '40px 0', position: 'relative' }}>
+                <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#F5F6FA', padding: '0 15px', color: '#64748b', fontSize: '14px', fontWeight: '500' }}>AREA MONITORING PEMILIK</span>
+            </div>
+
+            <div style={styles.rekapCard}>
+                <div style={styles.rekapHeader}>
+                    <div>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <FaChartLine color="#154784"/> Rekapitulasi Kehadiran Bulanan
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#6b7280', margin: '5px 0 0 0' }}>Data kehadiran dan lembur untuk perhitungan gaji.</p>
+                    </div>
+                    <div style={{display: 'flex', gap: '10px'}}>
+                        <input 
+                            type="month" 
+                            style={styles.monthInput} 
+                            value={bulanPilihan}
+                            onChange={(e) => setBulanPilihan(e.target.value)}
+                        />
+                        <button style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} onClick={() => window.print()}>
+                            <FaPrint /> Cetak
+                        </button>
+                    </div>
+                </div>
+
+                {loadingRekap ? (
+                    <div style={{textAlign: 'center', padding: '30px', color: '#6b7280'}}>Menghitung data...</div>
+                ) : (
+                    <table style={{width: '100%', borderCollapse: 'collapse', marginTop: '10px'}}>
+                        <thead>
+                            <tr style={{backgroundColor: '#f8fafc'}}>
+                                <th style={styles.tableHeader}>No</th>
+                                <th style={styles.tableHeader}>Nama Karyawan</th>
+                                <th style={styles.tableHeader}>Total Masuk</th>
+                                <th style={styles.tableHeader}>Total Lembur</th>
+                                <th style={styles.tableHeader}>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {dataRekap.map((item, index) => (
+                                <tr key={index} style={{borderBottom: '1px solid #f1f5f9'}}>
+                                    <td style={styles.tableCell}>{index + 1}</td>
+                                    <td style={{...styles.tableCell, fontWeight: 'bold'}}>{item.nama}</td>
+                                    <td style={styles.tableCell}>
+                                        <span style={styles.totalBadge}>{item.total_hadir} Hari</span>
+                                    </td>
+                                    <td style={styles.tableCell}>
+                                         {item.total_lembur > 0 ? (
+                                            <span style={{backgroundColor:'#fef3c7', color:'#92400e', padding:'5px 10px', borderRadius:'15px', fontWeight:'bold', fontSize:'12px'}}>
+                                                {item.total_lembur} Kali
+                                            </span>
+                                         ) : <span style={{color:'#9ca3af'}}>-</span>}
+                                    </td>
+                                    <td style={{...styles.tableCell, color: '#059669', fontSize: '13px'}}>Aktif</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
