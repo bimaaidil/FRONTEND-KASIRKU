@@ -21,9 +21,21 @@ const KelolaProduk = () => {
     setLoading(true);
     try {
       const data = await getProducts();
-      setProducts(data);
+      
+      // --- PERBAIKAN UTAMA: SISTEM PARSING AMAN UNTUK VERCEL ---
+      // Memastikan data yang masuk ke state 'products' selalu berbentuk Array murni
+      if (Array.isArray(data)) {
+        setProducts(data);
+      } else if (data && Array.isArray(data.data)) {
+        setProducts(data.data);
+      } else if (data && Array.isArray(data.products)) {
+        setProducts(data.products);
+      } else {
+        setProducts([]); // Fallback ke array kosong jika format rusak
+      }
     } catch (error) {
       console.error("Error load produk:", error);
+      setProducts([]); // Set ke array kosong saat catch eror agar UI tidak crash
     } finally {
       setLoading(false);
     }
@@ -45,10 +57,10 @@ const KelolaProduk = () => {
     }
   };
 
-  // Filter Pencarian
-  const filteredProducts = products.filter(product =>
-    product.nama?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter Pencarian yang Aman (Gunakan opsional chaining ?. untuk menghindari crash data null)
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(product => product.nama?.toLowerCase().includes(searchTerm.toLowerCase()))
+    : [];
 
   // Styles (Sudah dibersihkan dari Sidebar)
   const styles = {
@@ -125,7 +137,7 @@ const KelolaProduk = () => {
                                         {item.kategori}
                                     </span>
                                 </td>
-                                <td style={styles.tableCell}>Rp {parseInt(item.harga).toLocaleString('id-ID')}</td>
+                                <td style={styles.tableCell}>Rp {item.harga ? parseInt(item.harga).toLocaleString('id-ID') : 0}</td>
                                 <td style={styles.tableCell}>{item.stok}</td>
                                 <td style={styles.tableCell}>
                                     <div style={{display: 'flex', gap: '10px'}}>

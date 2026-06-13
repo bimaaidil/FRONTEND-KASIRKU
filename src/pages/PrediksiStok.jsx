@@ -38,15 +38,18 @@ const PrediksiStok = () => {
   const [chartData, setChartData] = useState([]);
   const [recommendationData, setRecommendationData] = useState([]);
 
-  // --- REVISI: STATE BARU UNTUK REKOMENDASI BAHAN PELENGKAP (HANYA GULA) ---
+  // --- STATE REKOMENDASI BAHAN PELENGKAP (HANYA GULA) ---
   const [bahanPelengkapData, setBahanPelengkapData] = useState([]);
 
-  // --- REVISI: FUNGSI HITUNG KEBUTUHAN BAHAN PELENGKAP BERDASARKAN PREDIKSI AI ---
+  // --- FUNGSI HITUNG KEBUTUHAN BAHAN PELENGKAP BERDASARKAN PREDIKSI AI ---
   const kalkulasiBahanPelengkap = async (predictions) => {
     let butuhGula = 0;
 
-    // Hanya hitung akumulasi gram Gula saja dari angka prediksi porsi buah AI Bi-LSTM
-    predictions.forEach(item => {
+    // Proteksi: Pastikan parameter predictions berbentuk Array sebelum di-loop
+    const safePredictions = Array.isArray(predictions) ? predictions : [];
+
+    // Hitung akumulasi gram Gula Cair berdasarkan angka prediksi porsi buah AI Bi-LSTM
+    safePredictions.forEach(item => {
       const nama = item.name.toLowerCase();
       const qty = item.predicted || 0;
 
@@ -79,15 +82,38 @@ const PrediksiStok = () => {
     try {
       const result = await getPredictionData(selectedDate);
       if (result) {
-        setWeatherData(result.weather);
-        setChartData(result.chart);
-        setRecommendationData(result.recommendations);
+        // Parsing data Cuaca
+        if (result.weather) {
+          setWeatherData(result.weather);
+        }
+
+        // Parsing data Grafik (Gunakan pengaman Array)
+        if (result.chart && Array.isArray(result.chart)) {
+          setChartData(result.chart);
+        } else if (result.chart && Array.isArray(result.chart.data)) {
+          setChartData(result.chart.data);
+        } else {
+          setChartData([]);
+        }
+
+        // Parsing data Rekomendasi Porsi Buah Utama (Gunakan pengaman Array)
+        let cleanRecommendations = [];
+        if (result.recommendations && Array.isArray(result.recommendations)) {
+          cleanRecommendations = result.recommendations;
+        } else if (result.recommendations && Array.isArray(result.recommendations.data)) {
+          cleanRecommendations = result.recommendations.data;
+        }
         
-        // Jalankan fungsi hitung bahan pelengkap (Gula) setelah prediksi porsi didapatkan
-        await kalkulasiBahanPelengkap(result.recommendations);
+        setRecommendationData(cleanRecommendations);
+        
+        // Jalankan fungsi hitung bahan pelengkap (Gula) secara aman
+        await kalkulasiBahanPelengkap(cleanRecommendations);
       }
     } catch (error) {
       console.error("Gagal memuat prediksi Bi-LSTM:", error);
+      setChartData([]);
+      setRecommendationData([]);
+      setBahanPelengkapData([]);
     } finally {
       setLoading(false);
     }
@@ -116,6 +142,7 @@ const PrediksiStok = () => {
         console.error(error);
         alert("Gagal memperbarui stok bahan pelengkap.");
       } finally {
+         RamosState(false);
         setIsUpdating(false);
       }
     }
@@ -154,6 +181,7 @@ const PrediksiStok = () => {
 
   // --- FUNGSI 2: BELI SEMUA (MASSAL BUAH) ---
   const handleBeliSemua = async () => {
+    if (!Array.isArray(recommendationData)) return;
     const itemsToBuy = recommendationData.filter(item => item.currentStock < item.predicted);
     
     if (itemsToBuy.length === 0) {
@@ -274,7 +302,7 @@ const PrediksiStok = () => {
                             <span style={{fontSize: '16px', color: '#dbeafe'}}>| Hum: {weatherData.humidity !== undefined ? weatherData.humidity : '--'}%</span>
                         </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}>
-                            {weatherData.condition.includes("Hujan") && weatherData.temp > 28 ? (
+                            {weatherData.condition && weatherData.condition.includes("Hujan") && weatherData.temp > 28 ? (
                                 <CloudRainWind color="#fde047" size={24} /> 
                             ) : (
                                 <Sun color="#fde047" size={24} />
@@ -282,7 +310,7 @@ const PrediksiStok = () => {
                             <span style={{fontSize: '18px', fontWeight: '500'}}>{weatherData.condition}</span>
                         </div>
                         <div style={{backgroundColor: 'rgba(255,255,255,0.2)', padding: '12px', borderRadius: '8px', fontSize: '12px', lineHeight: '1.5'}}>
-                            🤖 <b>AI Insight:</b> {weatherData.temp > 28 && weatherData.condition.includes("Hujan") 
+                            🤖 <b>AI Insight:</b> {weatherData.temp > 28 && weatherData.condition && weatherData.condition.includes("Hujan") 
                                 ? "Waspada hujan panas/pengap. Penjualan minuman dingin biasanya tetap tinggi karena kelembapan udara." 
                                 : weatherData.insight}
                         </div>
