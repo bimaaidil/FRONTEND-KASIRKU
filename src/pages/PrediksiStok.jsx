@@ -45,10 +45,8 @@ const PrediksiStok = () => {
   const kalkulasiBahanPelengkap = async (predictions) => {
     let butuhGula = 0;
 
-    // Proteksi: Pastikan parameter predictions berbentuk Array sebelum di-loop
     const safePredictions = Array.isArray(predictions) ? predictions : [];
 
-    // Hitung akumulasi gram Gula Cair berdasarkan angka prediksi porsi buah AI Bi-LSTM
     safePredictions.forEach(item => {
       const nama = item.name.toLowerCase();
       const qty = item.predicted || 0;
@@ -61,7 +59,6 @@ const PrediksiStok = () => {
       }
     });
 
-    // Ambil data sisa stok real-time Gula saat ini dari koleksi 'bahan_pelengkap' di Firestore
     let stokGula = 0;
     try {
       const gulaSnap = await getDoc(doc(db, "bahan_pelengkap", "gula"));
@@ -70,7 +67,6 @@ const PrediksiStok = () => {
       console.error("Gagal mengambil stok gula:", e);
     }
 
-    // Set data tabel eksklusif hanya untuk Gula Cair saja
     setBahanPelengkapData([
       { id: 'gula', name: 'Gula Cair', currentStock: stokGula, predicted: butuhGula, unit: 'gram', isCair: true }
     ]);
@@ -82,12 +78,10 @@ const PrediksiStok = () => {
     try {
       const result = await getPredictionData(selectedDate);
       if (result) {
-        // Parsing data Cuaca
         if (result.weather) {
           setWeatherData(result.weather);
         }
 
-        // Parsing data Grafik (Gunakan pengaman Array)
         if (result.chart && Array.isArray(result.chart)) {
           setChartData(result.chart);
         } else if (result.chart && Array.isArray(result.chart.data)) {
@@ -96,7 +90,6 @@ const PrediksiStok = () => {
           setChartData([]);
         }
 
-        // Parsing data Rekomendasi Porsi Buah Utama (Gunakan pengaman Array)
         let cleanRecommendations = [];
         if (result.recommendations && Array.isArray(result.recommendations)) {
           cleanRecommendations = result.recommendations;
@@ -105,8 +98,6 @@ const PrediksiStok = () => {
         }
         
         setRecommendationData(cleanRecommendations);
-        
-        // Jalankan fungsi hitung bahan pelengkap (Gula) secara aman
         await kalkulasiBahanPelengkap(cleanRecommendations);
       }
     } catch (error) {
@@ -142,7 +133,6 @@ const PrediksiStok = () => {
         console.error(error);
         alert("Gagal memperbarui stok bahan pelengkap.");
       } finally {
-         RamosState(false);
         setIsUpdating(false);
       }
     }
@@ -220,7 +210,6 @@ const PrediksiStok = () => {
     }
   };
 
-  // Logika Status Tombol
   const getActionStatus = (current, needed) => {
     if (current < needed) {
       const diff = needed - current;
@@ -241,7 +230,6 @@ const PrediksiStok = () => {
     };
   };
 
-  // Styles
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
     mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', backgroundColor: '#F5F6FA' },
@@ -337,7 +325,7 @@ const PrediksiStok = () => {
                 </div>
             </div>
 
-            {/* TABEL 1: REKOMENDASI BELANJA BUAH UTAMA (HASIL AI) */}
+            {/* TABEL 1: REKOMENDASI BELANJA BUAH UTAMA */}
             <div style={{...styles.card, padding: 0, overflow: 'hidden', marginBottom: '30px'}}>
                 <div style={{padding: '20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                     <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#1f2937'}}>Rekomendasi Belanja Buah Utama</h3>
@@ -355,122 +343,126 @@ const PrediksiStok = () => {
                     </button>
                 </div>
 
-                <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                    <thead>
-                        <tr style={{backgroundColor: '#f9fafb'}}>
-                            <th style={styles.tableHeader}>Nama Buah</th>
-                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Sistem</th>
-                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Target Bi-LSTM</th>
-                            <th style={styles.tableHeader}>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {recommendationData.map((item) => {
-                            const { status, amount, color, textColor, icon } = getActionStatus(item.currentStock, item.predicted);
-                            return (
-                                <tr key={item.id}>
-                                    <td style={{...styles.tableCell, fontWeight: '600'}}>{item.name}</td>
-                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
-                                        {item.currentStock} <span style={{color: '#9ca3af', fontSize: '11px'}}>{item.unit}</span>
-                                    </td>
-                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
-                                        <span style={{color: '#2563eb', fontWeight: 'bold'}}>{item.predicted}</span> <span style={{color: '#9ca3af', fontSize: '11px'}}>{item.unit}</span>
-                                    </td>
-                                    <td style={styles.tableCell}>
-                                        {status === 'BELI' ? (
-                                            <button 
-                                                onClick={() => handleKonfirmasiBelanja(item.name, amount, item.unit)}
-                                                disabled={isUpdating}
-                                                style={{
-                                                    ...styles.btnBeli,
-                                                    backgroundColor: color, 
-                                                    color: textColor,
-                                                    opacity: isUpdating ? 0.6 : 1
-                                                }}
-                                            >
-                                                <ShoppingCart size={14} style={{marginRight: 6}} />
-                                                BELI {amount} {item.unit}
-                                            </button>
-                                        ) : (
-                                            <div style={{
-                                                display: 'inline-flex', alignItems: 'center', padding: '6px 14px', 
-                                                borderRadius: '99px', backgroundColor: color, color: textColor, 
-                                                fontSize: '11px', fontWeight: 'bold'
-                                            }}>
-                                                {icon} AMAN
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+                <div className="table-responsive">
+                  <table style={{width: '100%', borderCollapse: 'collapse'}} className="table align-middle text-nowrap m-0">
+                      <thead>
+                          <tr style={{backgroundColor: '#f9fafb'}}>
+                              <th style={styles.tableHeader}>Nama Buah</th>
+                              <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Sistem</th>
+                              <th style={{...styles.tableHeader, textAlign: 'center'}}>Target Bi-LSTM</th>
+                              <th style={styles.tableHeader}>Aksi</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {recommendationData.map((item) => {
+                              const { status, amount, color, textColor, icon } = getActionStatus(item.currentStock, item.predicted);
+                              return (
+                                  <tr key={item.id}>
+                                      <td style={{...styles.tableCell, fontWeight: '600'}}>{item.name}</td>
+                                      <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                          {item.currentStock} <span style={{color: '#9ca3af', fontSize: '11px'}}>{item.unit}</span>
+                                      </td>
+                                      <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                          <span style={{color: '#2563eb', fontWeight: 'bold'}}>{item.predicted}</span> <span style={{color: '#9ca3af', fontSize: '11px'}}>{item.unit}</span>
+                                      </td>
+                                      <td style={styles.tableCell}>
+                                          {status === 'BELI' ? (
+                                              <button 
+                                                  onClick={() => handleKonfirmasiBelanja(item.name, amount, item.unit)}
+                                                  disabled={isUpdating}
+                                                  style={{
+                                                      ...styles.btnBeli,
+                                                      backgroundColor: color, 
+                                                      color: textColor,
+                                                      opacity: isUpdating ? 0.6 : 1
+                                                  }}
+                                              >
+                                                  <ShoppingCart size={14} style={{marginRight: 6}} />
+                                                  BELI {amount} {item.unit}
+                                              </button>
+                                          ) : (
+                                              <div style={{
+                                                  display: 'inline-flex', alignItems: 'center', padding: '6px 14px', 
+                                                  borderRadius: '99px', backgroundColor: color, color: textColor, 
+                                                  fontSize: '11px', fontWeight: 'bold'
+                                              }}>
+                                                  {icon} AMAN
+                                              </div>
+                                          )}
+                                      </td>
+                                  </tr>
+                              )
+                          })}
+                      </tbody>
+                  </table>
+                </div>
             </div>
 
-            {/* TABEL 2: REKOMENDASI PEMBELIAN STOK BAHAN PELENGKAP (EKSKLUSIF GULA) */}
+            {/* TABEL 2: REKOMENDASI PEMBELIAN STOK BAHAN PELENGKAP (GULA) */}
             <div style={{...styles.card, padding: 0, overflow: 'hidden'}}>
                 <div style={{padding: '20px', borderBottom: '1px solid #f3f4f6'}}>
                     <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#154784'}}>Rekomendasi Belanja Bahan Pelengkap Besok</h3>
                     <p style={{margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280'}}>Kalkulasi kebutuhan porsi resep otomatis berdasarkan matriks target penjualan AI Bi-LSTM.</p>
                 </div>
 
-                <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                    <thead>
-                        <tr style={{backgroundColor: '#f8fafc'}}>
-                            <th style={styles.tableHeader}>Bahan Baku Pelengkap</th>
-                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Gudang</th>
-                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Kebutuhan Porsi</th>
-                            <th style={styles.tableHeader}>Rekomendasi Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {bahanPelengkapData.map((item) => {
-                            const { status, amount, color, textColor, icon } = getActionStatus(item.currentStock, item.predicted);
-                            
-                            const displayCurrent = `${(item.currentStock / 1000).toFixed(2)} kg`;
-                            const displayNeeded = `${(item.predicted / 1000).toFixed(2)} kg`;
-                            const displayAmount = `${(amount / 1000).toFixed(2)} kg`;
+                <div className="table-responsive">
+                  <table style={{width: '100%', borderCollapse: 'collapse'}} className="table align-middle text-nowrap m-0">
+                      <thead>
+                          <tr style={{backgroundColor: '#f8fafc'}}>
+                              <th style={styles.tableHeader}>Bahan Baku Pelengkap</th>
+                              <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Gudang</th>
+                              <th style={{...styles.tableHeader, textAlign: 'center'}}>Kebutuhan Porsi</th>
+                              <th style={styles.tableHeader}>Rekomendasi Aksi</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {bahanPelengkapData.map((item) => {
+                              const { status, amount, color, textColor, icon } = getActionStatus(item.currentStock, item.predicted);
+                              
+                              const displayCurrent = `${(item.currentStock / 1000).toFixed(2)} kg`;
+                              const displayNeeded = `${(item.predicted / 1000).toFixed(2)} kg`;
+                              const displayAmount = `${(amount / 1000).toFixed(2)} kg`;
 
-                            return (
-                                <tr key={item.id}>
-                                    <td style={{...styles.tableCell, fontWeight: '600', color: '#1f2937'}}>{item.name}</td>
-                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
-                                        {displayCurrent}
-                                    </td>
-                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
-                                        <span style={{color: '#154784', fontWeight: 'bold'}}>{displayNeeded}</span>
-                                    </td>
-                                    <td style={styles.tableCell}>
-                                        {status === 'BELI' ? (
-                                            <button 
-                                                onClick={() => handleBeliBahanPelengkap(item.id, item.name, amount, item.unit)}
-                                                disabled={isUpdating}
-                                                style={{
-                                                    ...styles.btnBeli,
-                                                    backgroundColor: color, 
-                                                    color: textColor,
-                                                    opacity: isUpdating ? 0.6 : 1
-                                                }}
-                                            >
-                                                <ShoppingCart size={14} style={{marginRight: 6}} />
-                                                BELI SEBANYAK {displayAmount}
-                                            </button>
-                                        ) : (
-                                            <div style={{
-                                                display: 'inline-flex', alignItems: 'center', padding: '6px 14px', 
-                                                borderRadius: '99px', backgroundColor: color, color: textColor, 
-                                                fontSize: '11px', fontWeight: 'bold'
-                                            }}>
-                                                {icon} STOK CUKUP
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+                              return (
+                                  <tr key={item.id}>
+                                      <td style={{...styles.tableCell, fontWeight: '600', color: '#1f2937'}}>{item.name}</td>
+                                      <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                          {displayCurrent}
+                                      </td>
+                                      <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                          <span style={{color: '#154784', fontWeight: 'bold'}}>{displayNeeded}</span>
+                                      </td>
+                                      <td style={styles.tableCell}>
+                                          {status === 'BELI' ? (
+                                              <button 
+                                                  onClick={() => handleBeliBahanPelengkap(item.id, item.name, amount, item.unit)}
+                                                  disabled={isUpdating}
+                                                  style={{
+                                                      ...styles.btnBeli,
+                                                      backgroundColor: color, 
+                                                      color: textColor,
+                                                      opacity: isUpdating ? 0.6 : 1
+                                                  }}
+                                              >
+                                                  <ShoppingCart size={14} style={{marginRight: 6}} />
+                                                  BELI SEBANYAK {displayAmount}
+                                              </button>
+                                          ) : (
+                                              <div style={{
+                                                  display: 'inline-flex', alignItems: 'center', padding: '6px 14px', 
+                                                  borderRadius: '99px', backgroundColor: color, color: textColor, 
+                                                  fontSize: '11px', fontWeight: 'bold'
+                                              }}>
+                                                  {icon} STOK CUKUP
+                                              </div>
+                                          )}
+                                      </td>
+                                  </tr>
+                              )
+                          })}
+                      </tbody>
+                  </table>
+                </div>
             </div>
         </>
         )}

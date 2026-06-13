@@ -1,3 +1,4 @@
+// src/pages/StokOpname.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '../config/firebase'; 
 import { collection, getDocs, doc, runTransaction, serverTimestamp } from "firebase/firestore";
@@ -17,7 +18,6 @@ const StokOpname = () => {
     useEffect(() => {
         const fetchAllIngredients = async () => {
             try {
-                // 1. Ambil data buah dari koleksi "products"
                 const queryFruits = await getDocs(collection(db, "products"));
                 const fruitsData = queryFruits.docs.map(doc => ({
                     id: doc.id,
@@ -25,24 +25,20 @@ const StokOpname = () => {
                     ...doc.data()
                 }));
 
-                // 2. REVISI: Ambil data dari koleksi "bahan_pelengkap" (Gula, Susu, Pipet, Plastik)
                 const queryPelengkap = await getDocs(collection(db, "bahan_pelengkap"));
                 const pelengkapData = queryPelengkap.docs.map(doc => {
                     const res = doc.data();
                     return {
                         id: doc.id,
                         isBahanPelengkap: true,
-                        // Mapping agar nama field selaras dengan fruitsData
                         nama: res.nama || res.name || doc.id, 
                         stok: res.stok_sekarang ?? 0,
                         satuan: res.satuan
                     };
                 });
 
-                // Gabungkan kedua sumber data
                 const combinedData = [...fruitsData, ...pelengkapData];
 
-                // MENGURUTKAN SELURUH DATA A-Z BERDASARKAN NAMA BAHAN
                 const sortedData = combinedData.sort((a, b) => {
                     const nameA = (a.nama || "").toLowerCase();
                     const nameB = (b.nama || "").toLowerCase();
@@ -52,7 +48,7 @@ const StokOpname = () => {
                 setProducts(sortedData);
             } catch (error) {
                 console.error("ERROR saat fetch data:", error.message);
-                alert("Gagal mengambil data produk dan bahan pelengkap.");
+                alert("Gagal mengambil data produk and bahan pelengkap.");
             }
         };
         fetchAllIngredients();
@@ -73,10 +69,8 @@ const StokOpname = () => {
             await runTransaction(db, async (transaction) => {
                 let produkRef;
                 
-                // Tentukan referensi dokumen berdasarkan asal koleksi
                 if (selectedProduct.isBahanPelengkap) {
                     produkRef = doc(db, "bahan_pelengkap", selectedProduct.id);
-                    // Update field sesuai nama field di koleksi bahan_pelengkap
                     transaction.update(produkRef, { stok_sekarang: fisik });
                 } else {
                     produkRef = doc(db, "products", selectedProduct.id);
@@ -109,11 +103,10 @@ const StokOpname = () => {
         }
     };
 
-    // REVISI: Fungsi Pembantu untuk menentukan Satuan (kg vs buah vs gram vs pcs)
     const getUnitDisplay = (product) => {
         if (!product) return '';
         if (product.isBahanPelengkap && product.satuan) {
-            return product.satuan; // Ambil langsung dari field satuan Firestore
+            return product.satuan; 
         }
         const nama = product.nama || '';
         const buahSatuan = ['Semangka', 'Melon', 'Nenas', 'Nanas'];
@@ -123,33 +116,21 @@ const StokOpname = () => {
         return 'kg';
     };
 
-    const styles = {
-        layout: { display: 'flex', minHeight: '100vh', backgroundColor: '#f4f7fc', fontFamily: "'Poppins', sans-serif" },
-        mainContent: { marginLeft: '260px', width: '100%', padding: '40px' },
-        cardOpname: { maxWidth: '800px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: '30px' },
-        headerTitle: { fontSize: '24px', fontWeight: '700', color: '#154784', marginBottom: '10px' },
-        formGroup: { marginBottom: '20px' },
-        label: { fontSize: '13px', fontWeight: '600', color: '#444', marginBottom: '8px', display: 'block' },
-        input: { padding: '12px', borderRadius: '8px', border: '1px solid #ddd', width: '100%' },
-        infoBox: { backgroundColor: '#e3f2fd', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', marginTop: '20px', fontWeight: 'bold' },
-        btnSubmit: { backgroundColor: '#154784', color: 'white', padding: '12px 25px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer' }
-    };
-
     const selisihDisplay = selectedProduct && stokFisik !== '' ? (parseFloat(stokFisik) - selectedProduct.stok).toFixed(2) : 0;
 
     return (
-        <div style={styles.layout}>
+        <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
             <Sidebar />
-            <div style={styles.mainContent}>
-                <div style={styles.cardOpname}>
-                    <h2 style={styles.headerTitle}>Input Stok Opname</h2>
-                    <p className="text-muted mb-4">Sinkronisasi stok operasional Varisha Jus.</p>
+            <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+                <div className="card border-0 shadow-sm p-4 bg-white rounded-3 mx-auto" style={{ maxWidth: '800px' }}>
+                    <h2 className="fw-bold m-0" style={{ fontSize: '24px', color: '#154784' }}>Input Stok Opname</h2>
+                    <p className="text-muted small mt-1 mb-4">Sinkronisasi stok operasional Varisha Jus.</p>
                     
                     <form onSubmit={handleSimpan}>
-                        <div style={styles.formGroup}>
-                            <label style={styles.label}>Pilih Bahan Baku / Produk (Urutan A-Z)</label>
+                        <div className="mb-3">
+                            <label className="form-label fw-semibold text-secondary small">Pilih Bahan Baku / Produk (Urutan A-Z)</label>
                             <select 
-                                style={styles.input} 
+                                className="form-select bg-light py-2.5" 
                                 value={selectedProduct ? selectedProduct.id : ""}
                                 onChange={(e) => {
                                     const prod = products.find(p => p.id === e.target.value);
@@ -168,28 +149,29 @@ const StokOpname = () => {
 
                         {selectedProduct && (
                             <>
-                                <div style={styles.formGroup}>
-                                    <label style={styles.label}>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold text-secondary small">
                                         Jumlah Fisik Nyata (Input Per {getUnitDisplay(selectedProduct)})
                                     </label>
-                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <div className="d-flex gap-2 align-items-center">
                                         <input 
                                             type="number" 
                                             step={['buah', 'pcs'].includes(getUnitDisplay(selectedProduct)) ? "1" : "0.01"} 
-                                            style={{ ...styles.input, flex: 1 }} 
+                                            className="form-control bg-light py-2.5" 
                                             value={stokFisik} 
                                             onChange={(e) => setStokFisik(e.target.value)} 
-                                            placeholder={`Contoh: ${['buah', 'pcs'].includes(getUnitDisplay(selectedProduct)) ? '5' : '1500.00'}`}
+                                            placeholder={`Contoh: ${['buah', 'pcs'].includes(getUnitDisplay(selectedProduct)) ? '5' : '15.00'}`}
+                                            required
                                         />
-                                        <span style={{ fontWeight: 'bold', color: '#154784', width: '80px' }}>
+                                        <span className="fw-bold text-primary font-monospace text-center rounded-3 bg-primary-subtle py-2 px-3" style={{ minWidth: '75px' }}>
                                             {getUnitDisplay(selectedProduct)}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div style={styles.formGroup}>
-                                    <label style={styles.label}>Keterangan/Alasan</label>
-                                    <select style={styles.input} value={keterangan} onChange={(e) => setKeterangan(e.target.value)}>
+                                <div className="mb-3">
+                                    <label className="form-label fw-semibold text-secondary small">Keterangan/Alasan</label>
+                                    <select className="form-select bg-light py-2.5" value={keterangan} onChange={(e) => setKeterangan(e.target.value)}>
                                         <option value="Audit Berkala">Audit Berkala</option>
                                         <option value="Buah Busuk">Bahan Baku Rusak / Busuk / Expired</option>
                                         <option value="Hilang">Bahan Baku Hilang</option>
@@ -197,18 +179,18 @@ const StokOpname = () => {
                                     </select>
                                 </div>
 
-                                <div style={styles.infoBox}>
-                                    <span>Selisih Stok:</span>
-                                    <span style={{ color: selisihDisplay < 0 ? '#d32f2f' : '#2e7d32' }}>
-                                        {selisihDisplay} {getUnitDisplay(selectedProduct)}
+                                <div className="d-flex justify-content-between align-items-center p-3 rounded-3 my-4 fw-bold shadow-sm" style={{ backgroundColor: '#e3f2fd' }}>
+                                    <span className="text-secondary small text-uppercase">Selisih Hitung Stok:</span>
+                                    <span style={{ color: selisihDisplay < 0 ? '#d32f2f' : '#2e7d32', fontSize: '16px' }}>
+                                        {selisihDisplay > 0 ? `+${selisihDisplay}` : selisihDisplay} {getUnitDisplay(selectedProduct)}
                                     </span>
                                 </div>
                             </>
                         )}
 
-                        <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'end', gap: '10px' }}>
-                            <button type="button" className="btn btn-light" onClick={() => navigate('/kelola-produk')}>Batal</button>
-                            <button type="submit" style={styles.btnSubmit} disabled={loading}>
+                        <div className="d-flex justify-content-end gap-2 border-top pt-4 mt-4">
+                            <button type="button" className="btn btn-light border fw-medium px-4" onClick={() => navigate('/kelola-produk')}>Batal</button>
+                            <button type="submit" className="btn btn-primary fw-bold px-4" style={{ backgroundColor: '#154784', border: 'none' }} disabled={loading}>
                                 {loading ? 'Memproses...' : 'Simpan Sinkronisasi'}
                             </button>
                         </div>

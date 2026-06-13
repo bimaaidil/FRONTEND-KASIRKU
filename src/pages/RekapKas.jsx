@@ -1,13 +1,11 @@
 // src/pages/RekapKas.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar'; // <--- IMPORT SIDEBAR TUNGGAL
-import { FaChevronRight } from 'react-icons/fa';
+import Sidebar from '../components/Sidebar';
+import { FaChevronRight, FaTimes } from 'react-icons/fa';
 
 const RekapKas = () => {
   const navigate = useNavigate();
-
-  // Ambil Nama User untuk tampilan kartu
   const userName = localStorage.getItem('userName') || 'Karyawan';
 
   const [currentDate, setCurrentDate] = useState('');
@@ -22,7 +20,6 @@ const RekapKas = () => {
     setCurrentDate(date.toLocaleDateString('id-ID', options));
   }, []);
 
-  // --- LOGIKA SIMPAN KE LOCALSTORAGE ---
   const handleSave = (type) => {
     if (!amount || !description) {
         alert("Mohon lengkapi semua data!");
@@ -30,7 +27,6 @@ const RekapKas = () => {
     }
 
     const existingData = JSON.parse(localStorage.getItem('kasData')) || [];
-
     const newTransaction = {
         id: Date.now(),
         type: type, 
@@ -42,7 +38,6 @@ const RekapKas = () => {
     };
 
     localStorage.setItem('kasData', JSON.stringify([newTransaction, ...existingData]));
-
     alert(`Berhasil menyimpan ${type}`);
     
     setAmount('');
@@ -58,97 +53,71 @@ const RekapKas = () => {
     setShowKeluarModal(false);
   };
 
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '40px 50px' },
-    dateTitle: { fontSize: '18px', fontWeight: 'bold', marginBottom: '25px', color: '#1f2937', textAlign: 'left' },
-    
-    userCard: {
-        backgroundColor: '#f3f4f6', padding: '20px 25px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '60px', width: '100%', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', transition: '0.2s'
-    },
-    userNameStyle: { fontSize: '16px', fontWeight: 'bold', color: '#374151' },
-    actionContainer: { display: 'flex', gap: '30px', justifyContent: 'center', alignItems: 'center' },
-    btnMain: (bgColor) => ({
-        backgroundColor: bgColor, color: 'white', border: 'none', padding: '18px 0', borderRadius: '10px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', width: '240px', textAlign: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontFamily: "'Poppins', sans-serif", transition: '0.3s'
-    }),
-    overlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalCard: { backgroundColor: 'white', padding: '30px', borderRadius: '15px', width: '450px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', border: '1px solid #e5e7eb' },
-    modalTitle: { fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', borderBottom: '2px solid #154784', paddingBottom: '12px', color: '#111827' },
-    label: { display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '8px', color: '#4b5563' },
-    input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', marginBottom: '20px', fontSize: '14px', outline: 'none' },
-    modalBtnContainer: { display: 'flex', justifyContent: 'flex-end', gap: '12px' },
-    btnSave: { backgroundColor: '#154784', color: 'white', border: 'none', padding: '10px 30px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' },
-    btnCancel: { backgroundColor: '#9ca3af', color: 'white', border: 'none', padding: '10px 30px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }
-  };
-
   return (
-    <div style={styles.container}>
-      {/* 1. PANGGIL SIDEBAR TUNGGAL */}
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
 
-      {/* 2. MAIN CONTENT */}
-      <div style={styles.mainContent}>
-        <div style={styles.dateTitle}>{currentDate}</div>
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+        <div className="fw-semibold text-secondary mb-3" style={{ fontSize: '15px' }}>{currentDate}</div>
 
-        {/* User Card dengan Navigasi ke Detail Kas */}
+        {/* User Navigation Card */}
         <div 
-            style={styles.userCard} 
+            className="card border-0 shadow-sm p-3 px-4 rounded-3 bg-light-subtle d-flex flex-row justify-content-between align-items-center mb-5"
+            style={{ cursor: 'pointer', transition: '0.2s' }}
             onClick={() => navigate('/detail-kas')}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e5e7eb'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eef2f7'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = ''}
         >
-            <span style={styles.userNameStyle}>{userName}</span>
-            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                <span style={{fontSize:'12px', color:'#6b7280'}}>Lihat Detail</span>
-                <FaChevronRight color="#9ca3af" />
+            <span className="fw-bold text-dark" style={{ fontSize: '16px' }}>{userName}</span>
+            <div className="d-flex align-items-center gap-2">
+                <span className="text-muted" style={{ fontSize: '12px' }}>Lihat Detail</span>
+                <FaChevronRight className="text-muted" size={12} />
             </div>
         </div>
 
-        <div style={styles.actionContainer}>
-            <button 
-                style={styles.btnMain('#154784')} 
-                onClick={() => setShowMasukModal(true)}
-            >
-                Uang Masuk
-            </button>
-            <button 
-                style={styles.btnMain('#dc2626')} 
-                onClick={() => setShowKeluarModal(true)}
-            >
-                Uang Keluar
-            </button>
+        {/* BUTTON ACTION RESPONSIVE GRIDS */}
+        <div className="row g-3 justify-content-center">
+            <div className="col-12 col-sm-6 d-flex justify-content-center justify-content-sm-end">
+                <button className="btn btn-primary text-white fw-bold py-3 w-100 rounded-3 shadow-sm" style={{ maxWidth: '250px', backgroundColor: '#154784', border: 'none' }} onClick={() => setShowMasukModal(true)}>
+                    Uang Masuk
+                </button>
+            </div>
+            <div className="col-12 col-sm-6 d-flex justify-content-center justify-content-sm-start">
+                <button className="btn btn-danger text-white fw-bold py-3 w-100 rounded-3 shadow-sm" style={{ maxWidth: '250px' }} onClick={() => setShowKeluarModal(true)}>
+                    Uang Keluar
+                </button>
+            </div>
         </div>
       </div>
 
-      {/* POPUP UANG MASUK */}
-      {showMasukModal && (
-        <div style={styles.overlay}>
-            <div style={styles.modalCard}>
-                <div style={styles.modalTitle}>Input Uang Masuk</div>
-                <label style={styles.label}>Jumlah (Rp)</label>
-                <input type="number" placeholder="Contoh: 50000" style={styles.input} value={amount} onChange={(e) => setAmount(e.target.value)} />
-                <label style={styles.label}>Keterangan</label>
-                <input type="text" placeholder="Contoh: Modal awal" style={styles.input} value={description} onChange={(e) => setDescription(e.target.value)} />
-                <div style={styles.modalBtnContainer}>
-                    <button style={styles.btnCancel} onClick={handleCancel}>Batal</button>
-                    <button style={styles.btnSave} onClick={() => handleSave('Uang Masuk')}>Simpan Data</button>
+      {/* MODAL OVERLAYS RESPONSIVE POPUP */}
+      {(showMasukModal || showKeluarModal) && (
+        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center px-3" style={{ backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 1050 }}>
+            <div className="card border-0 shadow-lg p-4 bg-white rounded-3 w-100" style={{ maxWidth: '440px' }}>
+                <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style={{ borderColor: '#154784' }}>
+                    <h5 className="fw-bold text-dark m-0">{showMasukModal ? 'Input Uang Masuk' : 'Input Uang Keluar'}</h5>
+                    <button className="btn btn-link text-muted p-0" onClick={handleCancel}><FaTimes /></button>
                 </div>
-            </div>
-        </div>
-      )}
-
-      {/* POPUP UANG KELUAR */}
-      {showKeluarModal && (
-        <div style={styles.overlay}>
-            <div style={styles.modalCard}>
-                <div style={styles.modalTitle}>Input Uang Keluar</div>
-                <label style={styles.label}>Jumlah (Rp)</label>
-                <input type="number" placeholder="Contoh: 15000" style={styles.input} value={amount} onChange={(e) => setAmount(e.target.value)} />
-                <label style={styles.label}>Keterangan</label>
-                <input type="text" placeholder="Contoh: Beli Es Batu" style={styles.input} value={description} onChange={(e) => setDescription(e.target.value)} />
-                <div style={styles.modalBtnContainer}>
-                    <button style={styles.btnCancel} onClick={handleCancel}>Batal</button>
-                    <button style={{...styles.btnSave, backgroundColor: '#dc2626'}} onClick={() => handleSave('Uang Keluar')}>Simpan Data</button>
+                
+                <div className="mb-3">
+                    <label className="form-label fw-semibold text-secondary small">Jumlah (Rp)</label>
+                    <input type="number" placeholder="Contoh: 50000" className="form-control bg-light py-2" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                </div>
+                
+                <div className="mb-4">
+                    <label className="form-label fw-semibold text-secondary small">Keterangan</label>
+                    <input type="text" placeholder={showMasukModal ? "Contoh: Modal awal" : "Contoh: Beli Es Batu"} className="form-control bg-light py-2" value={description} onChange={(e) => setDescription(e.target.value)} required />
+                </div>
+                
+                <div className="d-flex justify-content-end gap-2">
+                    <button className="btn btn-secondary px-4 fw-semibold" onClick={handleCancel}>Batal</button>
+                    <button 
+                      className="btn text-white px-4 fw-bold" 
+                      style={{ backgroundColor: showMasukModal ? '#154784' : '#dc2626', border: 'none' }} 
+                      onClick={() => handleSave(showMasukModal ? 'Uang Masuk' : 'Uang Keluar')}
+                    >
+                      Simpan Data
+                    </button>
                 </div>
             </div>
         </div>

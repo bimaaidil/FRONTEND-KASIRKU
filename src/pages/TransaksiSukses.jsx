@@ -8,26 +8,21 @@ const TransaksiSukses = () => {
   const [transaction, setTransaction] = useState(null);
 
   useEffect(() => {
-    // 1. Ambil data transaksi terakhir dari LocalStorage
     const savedTransaction = localStorage.getItem('lastTransaction');
     
     if (savedTransaction) {
       setTransaction(JSON.parse(savedTransaction));
     } else {
-      // Jika user refresh halaman tapi tidak ada data transaksi, kembalikan ke menu
       navigate('/transaksi');
     }
   }, [navigate]);
 
-  // Format Rupiah
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  // Format Tanggal (Contoh: 05-November-2025, 16:03)
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString); // Konversi string kembali ke Date object
+    const date = new Date(dateString); 
     
-    // Opsi format tanggal bahasa Indonesia
     const options = { 
         day: '2-digit', 
         month: 'long', 
@@ -37,157 +32,61 @@ const TransaksiSukses = () => {
         hour12: false
     };
     
-    // Mengganti format default browser agar sesuai "DD-Month-YYYY, HH:MM"
     return date.toLocaleDateString('id-ID', options).replace('pukul', ','); 
   };
 
-  // Handler: Tombol Transaksi Baru
   const handleNewTransaction = () => {
-    localStorage.removeItem('lastTransaction'); // Bersihkan data transaksi lama
-    navigate('/transaksi'); // Kembali ke halaman menu
+    localStorage.removeItem('lastTransaction'); 
+    navigate('/transaksi'); 
   };
 
-  // Handler: Tombol Cetak
   const handlePrint = () => {
-    window.print(); // Membuka dialog print bawaan browser
+    window.print(); 
   };
 
-  // Jangan render apa-apa jika data belum siap
   if (!transaction) return null;
 
-  // --- STYLES ---
-  const styles = {
-    container: { 
-        minHeight: '100vh', 
-        backgroundColor: 'white', 
-        fontFamily: "'Poppins', sans-serif", 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-    },
-    contentCard: { 
-        width: '100%', 
-        maxWidth: '500px', 
-        padding: '40px', 
-        textAlign: 'center' 
-    },
-    
-    // Ikon Centang Hijau
-    iconContainer: { 
-        fontSize: '80px', 
-        color: '#2ecc71', // Warna Hijau Sukses
-        marginBottom: '20px' 
-    }, 
-    
-    title: { 
-        fontSize: '24px', 
-        fontWeight: 'bold', 
-        color: '#333', 
-        marginBottom: '5px' 
-    },
-    date: { 
-        fontSize: '14px', 
-        color: '#666', 
-        marginBottom: '40px', 
-        fontWeight: '600' 
-    },
-    
-    // Bagian Rincian Harga
-    detailsContainer: {
-        textAlign: 'left',
-        marginBottom: '40px',
-        padding: '0 20px'
-    },
-    detailRow: { 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        marginBottom: '15px', 
-        fontSize: '15px', 
-        color: '#333' 
-    },
-    detailLabel: { 
-        fontWeight: '500',
-        color: '#555' 
-    },
-    detailValue: { 
-        fontWeight: 'bold',
-        color: '#333'
-    },
-    
-    // Tombol Cetak (Putih Border Abu)
-    printBtn: { 
-        width: '100%', 
-        padding: '15px', 
-        backgroundColor: 'white', 
-        border: '1px solid #ccc', 
-        borderRadius: '8px', 
-        fontSize: '16px', 
-        fontWeight: 'bold', 
-        color: '#333', 
-        cursor: 'pointer', 
-        marginBottom: '15px', 
-        transition: '0.2s',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-    },
-    
-    // Tombol Transaksi Baru (Biru Solid)
-    newTransactionBtn: { 
-        width: '100%', 
-        padding: '15px', 
-        backgroundColor: '#154784', 
-        border: 'none', 
-        borderRadius: '8px', 
-        fontSize: '16px', 
-        fontWeight: 'bold', 
-        color: 'white', 
-        cursor: 'pointer', 
-        transition: '0.2s',
-        boxShadow: '0 4px 10px rgba(21, 71, 132, 0.3)'
-    }
-  };
-
   return (
-    <div style={styles.container}>
-        <div style={styles.contentCard}>
+    <div className="d-flex align-items-center justify-content-center bg-light px-3" style={{ minHeight: '100vh', fontFamily: "'Poppins', sans-serif" }}>
+        <div className="card border-0 shadow-sm p-4 p-md-5 bg-white rounded-4 w-100 text-center" style={{ maxWidth: '460px' }}>
             
-            {/* Ikon Centang */}
-            <div style={styles.iconContainer}>
-                <FaCheckCircle />
+            {/* Ikon Sukses */}
+            <div className="mb-3 text-success">
+                <FaCheckCircle style={{ fontSize: '74px', color: '#2ecc71' }} />
             </div>
 
-            {/* Judul & Tanggal */}
-            <h2 style={styles.title}>Transaksi Berhasil</h2>
-            <p style={styles.date}>{formatDate(transaction.date)}</p>
+            <h3 className="fw-bold text-dark m-0" style={{ fontSize: '22px' }}>Transaksi Berhasil</h3>
+            <p className="text-muted small fw-medium mt-1 mb-4 font-monospace">{formatDate(transaction.date)}</p>
 
-            {/* Rincian Pembayaran */}
-            <div style={styles.detailsContainer}>
-                <div style={styles.detailRow}>
-                    <span style={styles.detailLabel}>Pembayaran</span>
-                    <span style={styles.detailValue}>Tunai</span>
+            {/* Rincian Resi Struk Belanja */}
+            <div className="bg-light p-3 rounded-3 mb-4">
+                <div className="d-flex justify-content-between small mb-2.5">
+                    <span className="text-secondary fw-medium">Metode Bayar</span>
+                    <span className="fw-bold text-dark">Tunai (Cash)</span>
                 </div>
-                <div style={styles.detailRow}>
-                    <span style={styles.detailLabel}>Total Tagihan</span>
-                    <span style={styles.detailValue}>{formatRupiah(transaction.totalPrice)}</span>
+                <div className="d-flex justify-content-between small mb-2.5">
+                    <span className="text-secondary fw-medium">Total Tagihan</span>
+                    <span className="fw-bold text-primary">{formatRupiah(transaction.totalPrice)}</span>
                 </div>
-                <div style={styles.detailRow}>
-                    <span style={styles.detailLabel}>Diterima</span>
-                    <span style={styles.detailValue}>{formatRupiah(transaction.receivedAmount)}</span>
+                <div className="d-flex justify-content-between small mb-2.5">
+                    <span className="text-secondary fw-medium">Uang Diterima</span>
+                    <span className="fw-bold text-dark font-monospace">{formatRupiah(transaction.receivedAmount)}</span>
                 </div>
-                <div style={styles.detailRow}>
-                    <span style={styles.detailLabel}>Kembalian</span>
-                    <span style={styles.detailValue}>{formatRupiah(transaction.change)}</span>
+                <div className="d-flex justify-content-between small border-top pt-2 mt-2">
+                    <span className="text-secondary fw-bold">Kembalian</span>
+                    <span className="fw-bold text-success" style={{ fontSize: '15px' }}>{formatRupiah(transaction.change)}</span>
                 </div>
             </div>
 
-            {/* Tombol Aksi */}
-            <button style={styles.printBtn} onClick={handlePrint}>
-                Cetak Struk
-            </button>
-
-            <button style={styles.newTransactionBtn} onClick={handleNewTransaction}>
-                Transaksi Baru
-            </button>
+            {/* Tombol Aksi Kasir */}
+            <div className="d-flex flex-column gap-2">
+              <button className="btn btn-light border fw-bold py-2.5 rounded-3 text-secondary bg-white shadow-sm" onClick={handlePrint}>
+                  Cetak Struk Belanja
+              </button>
+              <button className="btn btn-primary fw-bold py-2.5 rounded-3 border-0" style={{ backgroundColor: '#154784' }} onClick={handleNewTransaction}>
+                  Buka Transaksi Baru
+              </button>
+            </div>
 
         </div>
     </div>

@@ -1,3 +1,4 @@
+// src/pages/Transaksi.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -32,24 +33,21 @@ const Transaksi = () => {
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || "Petugas";
 
-  // --- STATE SHIFT/KASIR ---
   const [isKasirOpen, setIsKasirOpen] = useState(false);
   const [currentShiftData, setCurrentShiftData] = useState(null);
   const [modalAwal, setModalAwal] = useState('');
   const [loadingShift, setLoadingShift] = useState(true);
 
-  // --- STATE TRANSAKSI ---
   const [selectedCategory, setSelectedCategory] = useState('Juice'); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showSavedOrders, setShowSavedOrders] = useState(false);
   const [savedOrders, setSavedOrders] = useState([]);
 
-  // --- REVISI: STATE KUSTOMISASI RESEP & QUANTITY ---
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [gulaOption, setGulaOption] = useState('normal'); 
   const [susuOption, setSusuOption] = useState('pakai');  
-  const [customQty, setCustomQty] = useState(1); // State baru untuk batch input
+  const [customQty, setCustomQty] = useState(1); 
 
   const [cart, setCart] = useState(() => {
     const savedCart = localStorage.getItem('cartData');
@@ -76,7 +74,7 @@ const Transaksi = () => {
         setCurrentShiftData(null);
       }
     } catch (error) {
-      console.error("Error checking kasir status:", error);
+      print("Error checking kasir status:", error);
     } finally {
       setLoadingShift(false);
     }
@@ -150,7 +148,7 @@ const Transaksi = () => {
       setSelectedProduct(product);
       setGulaOption('normal');
       setSusuOption('pakai');
-      setCustomQty(1); // Reset jumlah porsi jadi 1 setiap klik baru
+      setCustomQty(1); 
       setShowCustomModal(true);
     }
   };
@@ -223,85 +221,63 @@ const Transaksi = () => {
   const totalPrice = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 50px', backgroundColor: 'white', position: 'relative' },
-    shiftBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '15px 25px', backgroundColor: '#f9fafb', borderRadius: '12px', border: '1px solid #edf2f7' },
-    statusInfo: { display: 'flex', flexDirection: 'column', gap: '4px' },
-    shiftActions: { display: 'flex', gap: '12px', alignItems: 'center' },
-    openBtn: { backgroundColor: '#2e7d32', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' },
-    closeBtn: { backgroundColor: '#d32f2f', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' },
-    savedOrdersBtn: { backgroundColor: '#154784', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: '600', fontSize: '14px' },
-    badge: { backgroundColor: '#e74c3c', color: 'white', borderRadius: '50%', padding: '2px 8px', fontSize: '11px', fontWeight: 'bold' },
-    menuButton: { backgroundColor: '#154784', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '8px', cursor: isKasirOpen ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: '8px', opacity: isKasirOpen ? 1 : 0.6 },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '40px 25px', marginTop: '30px', opacity: isKasirOpen ? 1 : 0.3, pointerEvents: isKasirOpen ? 'auto' : 'none' },
-    imageCircle: { width: '130px', height: '130px', borderRadius: '50%', backgroundColor: '#f9fafb', marginBottom: '12px', overflow: 'hidden', border: '4px solid white', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' },
-    bottomBar: { position: 'fixed', bottom: '30px', left: 'calc(50% + 130px)', transform: 'translateX(-50%)', backgroundColor: '#154784', color: 'white', padding: '18px 60px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', minWidth: '350px', fontWeight: 'bold', zIndex: 100 },
-    overlay: { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modal: { backgroundColor: 'white', width: '400px', borderRadius: '12px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' },
-    radioGroup: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' },
-    radioLabel: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' },
-    submitCustomBtn: { backgroundColor: '#154784', color: 'white', border: 'none', width: '100%', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px' },
-    
-    // STYLE BARU UNTUK INPUT QUANTITY DI MODAL
-    qtyContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', margin: '15px 0' },
-    qtyBtn: { border: '1px solid #ddd', padding: '8px', borderRadius: '50%', width: '35px', height: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backgroundColor: '#f9fafb' }
-  };
-
   return (
-    <div style={styles.container}>
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
-      <div style={styles.mainContent}>
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0', paddingBottom: '110px' }}>
         
-        <div style={styles.shiftBar}>
-          <div style={styles.statusInfo}>
-            <h4 style={{ margin: 0, color: '#154784' }}>Status Kasir</h4>
-            <span style={{ fontSize: '13px', color: isKasirOpen ? '#2e7d32' : '#d32f2f', fontWeight: 'bold' }}>
-              {isKasirOpen ? `● OPEN (Shift ${currentShiftData?.petugas_buka})` : "● CLOSED"}
-            </span>
-          </div>
+        {/* SHIFT STATUS CARD RESPONSIVE */}
+        <div className="card border-0 bg-light shadow-sm p-3 mb-4 rounded-3">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+              <h5 className="fw-bold m-0" style={{ color: '#154784', fontSize: '16px' }}>Status Kasir Toko</h5>
+              <span className="fw-bold small d-block mt-0.5" style={{ color: isKasirOpen ? '#2e7d32' : '#d32f2f' }}>
+                {isKasirOpen ? `● BUKA (Petugas: ${currentShiftData?.petugas_buka})` : "● TUTUP (Offline)"}
+              </span>
+            </div>
 
-          <div style={styles.shiftActions}>
-            {savedOrders.length > 0 && isKasirOpen && (
-              <button style={styles.savedOrdersBtn} onClick={() => setShowSavedOrders(true)}>
-                <FaClipboardList /> 
-                <span>Pesanan Tersimpan</span>
-                <span style={styles.badge}>{savedOrders.length}</span>
-              </button>
-            )}
-
-            {isKasirOpen ? (
-              <button style={styles.closeBtn} onClick={handleTutupKasir} disabled={loadingShift}>
-                <FaDoorClosed /> {loadingShift ? '...' : 'Tutup Kasir'}
-              </button>
-            ) : (
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ position: 'relative' }}>
-                  <FaMoneyBillWave style={{ position: 'absolute', left: '10px', top: '12px', color: '#666' }} />
-                  <input 
-                    type="number" 
-                    placeholder="Modal Awal" 
-                    value={modalAwal}
-                    onChange={(e) => setModalAwal(e.target.value)}
-                    style={{ padding: '10px 10px 10px 35px', borderRadius: '8px', border: '1px solid #ddd', width: '130px' }}
-                  />
-                </div>
-                <button style={styles.openBtn} onClick={handleBukaKasir} disabled={loadingShift}>
-                  {loadingShift ? '...' : 'Buka Kasir'}
+            <div className="d-flex flex-wrap align-items-center gap-2">
+              {savedOrders.length > 0 && isKasirOpen && (
+                <button className="btn btn-primary btn-sm fw-bold d-flex align-items-center gap-2 py-2" style={{ backgroundColor: '#154784', border: 'none' }} onClick={() => setShowSavedOrders(true)}>
+                  <FaClipboardList /> Antrean <span className="badge bg-danger rounded-circle">{savedOrders.length}</span>
                 </button>
-              </div>
-            )}
+              )}
+
+              {isKasirOpen ? (
+                <button className="btn btn-danger btn-sm fw-bold d-flex align-items-center gap-2 py-2" onClick={handleTutupKasir} disabled={loadingShift}>
+                  <FaDoorClosed /> {loadingShift ? '...' : 'Tutup Shift'}
+                </button>
+              ) : (
+                <div className="d-flex gap-2 w-100 w-sm-auto">
+                  <div className="position-relative flex-grow-1">
+                    <FaMoneyBillWave className="position-absolute start-0 top-50 translate-middle-y ms-2.5 text-muted" size={14} />
+                    <input 
+                      type="number" 
+                      placeholder="Modal" 
+                      className="form-control form-control-sm ps-5 bg-white shadow-none py-2" 
+                      value={modalAwal}
+                      onChange={(e) => setModalAwal(e.target.value)}
+                      style={{ width: window.innerWidth > 576 ? '120px' : '100%' }}
+                    />
+                  </div>
+                  <button className="btn btn-success btn-sm fw-bold px-3 py-2 text-nowrap" onClick={handleBukaKasir} disabled={loadingShift}>
+                    Buka Kasir
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-            <button style={styles.menuButton} onClick={() => isKasirOpen && setIsDropdownOpen(!isDropdownOpen)}>
+        {/* DROPDOWN KATEGORI MENU */}
+        <div className="mb-4 position-relative">
+            <button className="btn btn-primary d-flex align-items-center gap-2 fw-semibold border-0 px-4 py-2" style={{ backgroundColor: '#154784', opacity: isKasirOpen ? 1 : 0.6 }} onClick={() => isKasirOpen && setIsDropdownOpen(!isDropdownOpen)}>
                 {selectedCategory} <FaChevronDown size={10} />
             </button>
             {isDropdownOpen && (
-                <div style={{ position: 'absolute', backgroundColor: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '8px', width: '180px', zIndex: 10 }}>
+                <div className="position-absolute bg-white shadow rounded-3 border-0 mt-1" style={{ width: '180px', zIndex: 100 }}>
                     {['Juice', 'Juice + Ice Cream', 'Ice Cream'].map(cat => (
-                        <div key={cat} style={{ padding: '12px', cursor: 'pointer', borderBottom: '1px solid #eee' }} onClick={() => { setSelectedCategory(cat); setIsDropdownOpen(false); }}>
+                        <div key={cat} className="p-3 bg-white border-bottom text-dark small" style={{ cursor: 'pointer' }} onClick={() => { setSelectedCategory(cat); setIsDropdownOpen(false); }}>
                             {cat}
                         </div>
                     ))}
@@ -309,44 +285,52 @@ const Transaksi = () => {
             )}
         </div>
 
-        <div style={styles.grid}>
+        {/* RESPONSIVE FLUID PRODUCT DISPLAY GRID */}
+        <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-4 mt-2" style={{ opacity: isKasirOpen ? 1 : 0.3, pointerEvents: isKasirOpen ? 'auto' : 'none' }}>
             {products.filter(p => p.category === selectedCategory).map((prod) => (
-                <div key={prod.id} style={{ textAlign:'center', cursor:'pointer' }} onClick={() => handleProductClick(prod)}>
-                    <div style={styles.imageCircle}>
-                        <img src={prod.image} alt={prod.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                <div key={prod.id} className="col text-center" style={{ cursor: 'pointer' }} onClick={() => handleProductClick(prod)}>
+                    <div className="mx-auto rounded-circle overflow-hidden bg-white shadow-sm border border-4 border-white mb-2" style={{ width: '110px', height: '110px' }}>
+                        <img src={prod.image} alt={prod.name} className="w-100 h-100" style={{ objectFit: 'cover' }} />
                     </div>
-                    <div style={{ fontWeight: '600' }}>{prod.name}</div>
-                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{formatRupiah(prod.price)}</div>
+                    <div className="fw-bold text-dark small" style={{ fontSize: '13px' }}>{prod.name}</div>
+                    <div className="text-secondary font-monospace small" style={{ fontSize: '12px' }}>{formatRupiah(prod.price)}</div>
                 </div>
             ))}
         </div>
 
+        {/* FLOATING BOTTOM BANNER RESPONSIVE */}
         {totalItems > 0 && isKasirOpen && (
-            <div style={styles.bottomBar} onClick={handleGoToCart}>
-                <FaShoppingCart style={{ marginRight: '10px' }} />
-                {totalItems} Item | Total: {formatRupiah(totalPrice)}
+            <div 
+              className="position-fixed bottom-0 start-50 translate-middle-x bg-primary text-white d-flex align-items-center justify-content-center gap-2 p-3 shadow-lg border-0 w-100" 
+              style={{ backgroundColor: '#154784', zIndex: 1040, cursor: 'pointer', maxWidth: window.innerWidth > 768 ? '450px' : '100%', marginBottom: window.innerWidth > 768 ? '25px' : '0', borderRadius: window.innerWidth > 768 ? '15px' : '0' }} 
+              onClick={handleGoToCart}
+            >
+                <FaShoppingCart />
+                <span className="fw-bold">{totalItems} Item Terpilih | {formatRupiah(totalPrice)}</span>
             </div>
         )}
 
+        {/* STATUS KASIR CLOSED WATERMARK */}
         {!isKasirOpen && !loadingShift && (
-          <div style={{ position: 'absolute', top: '60%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-            <FaStore size={60} style={{ color: '#ccc', marginBottom: '15px' }} />
-            <h3 style={{ color: '#999' }}>Kasir belum dibuka.</h3>
+          <div className="position-absolute start-50 top-50 translate-middle text-center" style={{ opacity: 0.4 }}>
+            <FaStore size={54} className="text-muted mb-2" />
+            <h5 className="text-muted fw-bold">Kasir Belum Aktif</h5>
           </div>
         )}
 
+        {/* MODAL ANTI-ANTREAN POPUP */}
         {showSavedOrders && (
-          <div style={styles.overlay}>
-            <div style={styles.modal}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ margin: 0 }}>Antrean Pesanan</h3>
-                <FaTimes style={{ cursor: 'pointer', color: '#666' }} onClick={() => setShowSavedOrders(false)}/>
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center px-3" style={{ backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 1050 }}>
+            <div className="card border-0 shadow-lg p-4 bg-white rounded-3 w-100" style={{ maxWidth: '400px' }}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h4 className="fw-bold m-0" style={{ fontSize: '16px' }}>Antrean Pesanan</h4>
+                <button className="btn btn-link text-muted p-0" onClick={() => setShowSavedOrders(false)}><FaTimes /></button>
               </div>
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
                 {savedOrders.map((order, index) => (
-                  <div key={index} style={{ padding: '15px', borderBottom: '1px solid #eee', cursor: 'pointer' }} onClick={() => handleLoadOrder(order)}>
-                    <div style={{ fontWeight: 'bold', color: '#154784' }}>{order.note || "Tanpa Catatan"}</div>
-                    <div style={{ fontSize: '13px', color: '#666' }}>{order.items.length} Produk - {formatRupiah(order.total)}</div>
+                  <div key={index} className="p-3 border-bottom bg-white" style={{ cursor: 'pointer' }} onClick={() => handleLoadOrder(order)}>
+                    <div className="fw-bold text-primary small">{order.note || "Tanpa Catatan"}</div>
+                    <div className="text-muted font-monospace mt-0.5" style={{ fontSize: '12px' }}>{order.items.length} Produk - {formatRupiah(order.total)}</div>
                   </div>
                 ))}
               </div>
@@ -354,68 +338,66 @@ const Transaksi = () => {
           </div>
         )}
 
-        {/* --- REVISI: MODAL KUSTOMISASI DENGAN INPUT JUMLAH PORSI OPTIMAL --- */}
+        {/* MODAL KUSTOMISASI DOSIS AI */}
         {showCustomModal && selectedProduct && (
-          <div style={styles.overlay}>
-            <div style={styles.modal}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0 }}>Kustomisasi {selectedProduct.name}</h3>
-                <FaTimes style={{ cursor: 'pointer', color: '#666' }} onClick={() => setShowCustomModal(false)}/>
+          <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center px-3" style={{ backgroundColor: 'rgba(0,0,0,0.55)', zIndex: 1050 }}>
+            <div className="card border-0 shadow-lg p-4 bg-white rounded-3 w-100" style={{ maxWidth: '420px' }}>
+              <div className="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h4 className="fw-bold text-dark m-0" style={{ fontSize: '16px' }}>Kustom {selectedProduct.name}</h4>
+                <button className="btn btn-link text-muted p-0" onClick={() => setShowCustomModal(false)}><FaTimes /></button>
               </div>
               
-              <div style={{ marginBottom: '15px' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#154784', display: 'block', marginBottom: '8px' }}>Takaran Gula:</span>
-                <div style={styles.radioGroup}>
-                  <label style={styles.radioLabel}>
-                    <input type="radio" name="gula" value="normal" checked={gulaOption === 'normal'} onChange={() => setGulaOption('normal')} />
-                    Normal (2,5 / 3 Sendok)
+              <div className="mb-3">
+                <span className="fw-bold text-dark small d-block mb-2" style={{ color: '#154784' }}>Takaran Gula Cair:</span>
+                <div className="d-flex flex-column gap-2 small">
+                  <label className="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input" name="gula" value="normal" checked={gulaOption === 'normal'} onChange={() => setGulaOption('normal')} />
+                    Normal (Resep Utama Varisha)
                   </label>
-                  <label style={styles.radioLabel}>
-                    <input type="radio" name="gula" value="sedikit" checked={gulaOption === 'sedikit'} onChange={() => setGulaOption('sedikit')} />
-                    Gula Sedikit (1 Sendok)
+                  <label className="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input" name="gula" value="sedikit" checked={gulaOption === 'sedikit'} onChange={() => setGulaOption('sedikit')} />
+                    Gula Sedikit (1 Sendok Makan)
                   </label>
-                  <label style={styles.radioLabel}>
-                    <input type="radio" name="gula" value="tanpa_gula" checked={gulaOption === 'tanpa_gula'} onChange={() => setGulaOption('tanpa_gula')} />
-                    Tanpa Gula (0 Sendok)
+                  <label className="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input" name="gula" value="tanpa_gula" checked={gulaOption === 'tanpa_gula'} onChange={() => setGulaOption('tanpa_gula')} />
+                    Tanpa Manis Tambahan (0 Gula)
                   </label>
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#154784', display: 'block', marginBottom: '8px' }}>Opsi Tambahan Susu:</span>
-                <div style={styles.radioGroup}>
-                  <label style={styles.radioLabel}>
-                    <input type="radio" name="susu" value="pakai" checked={susuOption === 'pakai'} onChange={() => setSusuOption('pakai')} />
+              <div className="mb-3 border-top pt-2">
+                <span className="fw-bold text-dark small d-block mb-2" style={{ color: '#154784' }}>Opsi SKM Tambahan:</span>
+                <div className="d-flex flex-column gap-2 small">
+                  <label className="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input" name="susu" value="pakai" checked={susuOption === 'pakai'} onChange={() => setSusuOption('pakai')} />
                     Pakai Susu Kental Manis
                   </label>
-                  <label style={styles.radioLabel}>
-                    <input type="radio" name="susu" value="tanpa_susu" checked={susuOption === 'tanpa_susu'} onChange={() => setSusuOption('tanpa_susu')} />
-                    Tanpa Susu (0 Gram)
+                  <label className="d-flex align-items-center gap-2" style={{ cursor: 'pointer' }}>
+                    <input type="radio" className="form-check-input" name="susu" value="tanpa_susu" checked={susuOption === 'tanpa_susu'} onChange={() => setSusuOption('tanpa_susu')} />
+                    Murni Tanpa Susu (0 Gram)
                   </label>
                 </div>
               </div>
 
-              {/* TAMPILAN BARU: INPUT BATCH QUANTITY */}
-              <div style={{ marginBottom: '15px', textAlign: 'center', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '14px', color: '#154784' }}>Jumlah Porsi:</span>
-                <div style={styles.qtyContainer}>
-                  <button type="button" style={styles.qtyBtn} onClick={() => setCustomQty(q => Math.max(1, q - 1))}><FaMinus size={12}/></button>
+              {/* BATCH BUNDLING QUANTITY INPUT CONTAINER */}
+              <div className="mb-3 text-center border-top pt-3">
+                <span className="fw-bold text-dark small" style={{ color: '#154784' }}>Jumlah Pesanan:</span>
+                <div className="d-flex align-items-center justify-content-center gap-3 mt-2">
+                  <button type="button" className="btn btn-light border-secondary rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }} onClick={() => setCustomQty(q => Math.max(1, q - 1))}><FaMinus size={11}/></button>
                   <input 
                     type="number" 
                     min="1" 
+                    className="form-control bg-light text-center fw-bold font-monospace shadow-none p-1"
                     value={customQty} 
                     onChange={(e) => setCustomQty(Math.max(1, parseInt(e.target.value) || 1))} 
-                    style={{ width: '60px', textAlign: 'center', padding: '5px', borderRadius: '6px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '16px' }}
+                    style={{ width: '55px', fontSize: '15px' }}
                   />
-                  <button type="button" style={styles.qtyBtn} onClick={() => setCustomQty(q => q + 1)}><FaPlus size={12}/></button>
+                  <button type="button" className="btn btn-light border-secondary rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }} onClick={() => setCustomQty(q => q + 1)}><FaPlus size={11}/></button>
                 </div>
               </div>
 
-              <button 
-                style={styles.submitCustomBtn} 
-                onClick={() => executeAddToCart(selectedProduct, { gula: gulaOption, susu: susuOption }, customQty)}
-              >
-                Masukkan {customQty} porsi ke Keranjang
+              <button className="btn btn-primary w-100 fw-bold py-2.5 rounded-3 border-0 mt-2" style={{ backgroundColor: '#154784' }} onClick={() => executeAddToCart(selectedProduct, { gula: gulaOption, susu: susuOption }, customQty)}>
+                Masukkan {customQty} Porsi ke Nota
               </button>
             </div>
           </div>

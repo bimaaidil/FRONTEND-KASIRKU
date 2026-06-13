@@ -1,6 +1,7 @@
+// src/pages/RekapBulanan.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar'; 
+import Sidebar from '../components/Sidebar';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const RekapBulanan = () => {
@@ -47,110 +48,91 @@ const RekapBulanan = () => {
   const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + curr.subtotal, 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 50px' },
-    pageTitle: { fontSize: '20px', fontWeight: 'bold', marginBottom: '25px', color: '#1f2937' },
-    filterContainer: { display: 'flex', gap: '12px', marginBottom: '25px', alignItems: 'center' },
-    selectInput: { padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', minWidth: '200px', outline: 'none' },
-    disabledInput: { padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: '80px', backgroundColor: '#f9fafb', color: '#6b7280', textAlign: 'center' },
-    btnTampilkan: { backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: '0.2s' },
-    tableCard: { border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px', backgroundColor: 'white', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', minHeight: '450px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' },
-    table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px' },
-    th: { textAlign: 'left', padding: '12px', borderBottom: '2px solid #f3f4f6', fontWeight: 'bold', color: '#374151' },
-    td: { padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#4b5563' },
-    totalSection: { textAlign: 'right', marginTop: '25px', fontSize: '16px', fontWeight: 'bold', color: '#111827' },
-    paginationContainer: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '20px' },
-    pageBtn: (isActive) => ({
-        width: '35px', height: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', fontSize: '13px',
-        backgroundColor: isActive ? '#2563eb' : 'white',
-        color: isActive ? 'white' : '#374151',
-        transition: '0.2s'
-    }),
-    arrowBtn: { width: '35px', height: '35px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #d1d5db', borderRadius: '6px', cursor: 'pointer', backgroundColor: '#f9fafb', color: '#374151' }
-  };
-
   return (
-    <div style={styles.container}>
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
-      <div style={styles.mainContent}>
-        <h2 style={styles.pageTitle}>Data Penjualan Bulanan</h2>
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Bulanan</h2>
 
-        <div style={styles.filterContainer}>
-            <select style={styles.selectInput} value={selectedMonth} onChange={handleMonthChange}>
+        {/* INPUT FILTER RESPONSIVE */}
+        <div className="d-flex flex-column flex-sm-row gap-2 mb-4 align-items-sm-center">
+            <select className="form-select bg-white py-2" style={{ minWidth: '180px' }} value={selectedMonth} onChange={handleMonthChange}>
                 <option value="">Pilih nama bulan...</option>
                 {["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"].map(m => (
                     <option key={m} value={m}>{m}</option>
                 ))}
             </select>
-            <input type="text" value="2026" readOnly style={styles.disabledInput} />
-            <button style={styles.btnTampilkan} onClick={handleTampilkan}>Tampilkan Laporan</button>
+            <input type="text" value="2026" readOnly className="form-control bg-light text-center py-2" style={{ width: window.innerWidth > 576 ? '80px' : '100%' }} />
+            <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto" onClick={handleTampilkan}>Tampilkan Laporan</button>
         </div>
 
-        <div style={styles.tableCard}>
-            <table style={styles.table}>
+        {/* TABLE CARD CONTAINER */}
+        <div className="card border-0 shadow-sm p-4 bg-white rounded-3" style={{ minHeight: '450px' }}>
+          <div className="table-responsive flex-grow-1">
+            <table className="table align-middle text-nowrap m-0" style={{ fontSize: '14px' }}>
                 <thead>
-                    <tr>
-                        <th style={styles.th}>No</th>
-                        <th style={styles.th}>Tanggal</th>
-                        <th style={styles.th}>Produk</th>
-                        <th style={{ ...styles.th, textAlign: 'center' }}>Jumlah</th>
-                        <th style={{ ...styles.th, textAlign: 'center' }}>Harga</th>
-                        <th style={{ ...styles.th, textAlign: 'center' }}>Sub Total</th>
+                    <tr className="text-secondary small text-uppercase">
+                        <th className="border-0 pb-3">No</th>
+                        <th className="border-0 pb-3">Tanggal</th>
+                        <th className="border-0 pb-3">Produk</th>
+                        <th className="border-0 pb-3 text-center">Jumlah</th>
+                        <th className="border-0 pb-3 text-center">Harga</th>
+                        <th className="border-0 pb-3 text-center">Sub Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     {showReport && currentItems.length > 0 ? (
                         currentItems.map((item, index) => (
-                            <tr key={item.id}>
-                                <td style={styles.td}>{indexOfFirstItem + index + 1}</td>
-                                <td style={styles.td}>{item.date}</td>
-                                <td style={styles.td}>{item.product}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{item.qty}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{formatRupiah(item.price)}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{formatRupiah(item.subtotal)}</td>
+                            <tr key={item.id} className="border-top">
+                                <td className="py-3 text-muted">{indexOfFirstItem + index + 1}</td>
+                                <td className="py-3 text-secondary">{item.date}</td>
+                                <td className="py-3 fw-medium text-dark">{item.product}</td>
+                                <td className="py-3 text-center text-dark">{item.qty}</td>
+                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price)}</td>
+                                <td className="py-3 text-center text-primary fw-medium">{formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="6" style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
+                            <td colSpan="6" className="text-center text-muted py-5">
                                 {showReport ? "Tidak ada data pada bulan ini." : "Silakan pilih bulan dan klik Tampilkan Laporan."}
                             </td>
                         </tr>
                     )}
                 </tbody>
             </table>
+          </div>
 
-            {showReport && currentItems.length > 0 && (
-                <div>
-                    <div style={styles.totalSection}>
-                        Total Pendapatan {selectedMonth}: <span style={{color:'#2563eb'}}>{formatRupiah(totalPendapatan)}</span>
-                    </div>
+          {showReport && currentItems.length > 0 && (
+              <div className="mt-4">
+                  <div className="text-end fw-bold text-dark mb-3" style={{ fontSize: '16px' }}>
+                      Total Pendapatan {selectedMonth}: <span className="text-primary">{formatRupiah(totalPendapatan)}</span>
+                  </div>
 
-                    {totalPages > 1 && (
-                        <div style={styles.paginationContainer}>
-                            <button style={styles.arrowBtn} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                                <FaChevronLeft size={10} />
-                            </button>
-                            
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <button 
-                                    key={i + 1} 
-                                    style={styles.pageBtn(currentPage === i + 1)}
-                                    onClick={() => setCurrentPage(i + 1)}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
+                  {totalPages > 1 && (
+                      <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-1.5 mt-2">
+                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '35px', height: '35px' }} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                              <FaChevronLeft size={10} />
+                          </button>
+                          
+                          {Array.from({ length: totalPages }, (_, i) => (
+                              <button 
+                                  key={i + 1} 
+                                  className={`btn btn-sm d-flex align-items-center justify-content-center fw-medium ${currentPage === i + 1 ? 'btn-primary' : 'btn-light border'}`}
+                                  style={{ width: '35px', height: '35px' }}
+                                  onClick={() => setCurrentPage(i + 1)}
+                              >
+                                  {i + 1}
+                              </button>
+                          ))}
 
-                            <button style={styles.arrowBtn} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
-                                <FaChevronRight size={10} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
+                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '35px', height: '35px' }} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                              <FaChevronRight size={10} />
+                          </button>
+                      </div>
+                  )}
+              </div>
+          )}
         </div>
       </div>
     </div>

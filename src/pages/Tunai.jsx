@@ -10,7 +10,6 @@ const Tunai = () => {
   const [totalPrice, setTotalPrice] = useState(0);
   const [receivedAmount, setReceivedAmount] = useState('');
 
-  // Deklarasi URL Server Cloud Vercel Terpusat
   const BASE_SERVER_URL = 'https://backend-kasirku.vercel.app';
 
   useEffect(() => {
@@ -33,13 +32,9 @@ const Tunai = () => {
 
     const change = numericAmount - totalPrice;
     const savedCart = JSON.parse(localStorage.getItem('cartData')) || [];
-    
-    // AMBIL DATA CUACA DARI LOCALSTORAGE
     const tempWeather = JSON.parse(localStorage.getItem('tempWeatherData')) || { suhu: 0, kondisi: "Tidak Diketahui" };
 
     try {
-      // --- 1. SIMPAN KE API FLASK (UNTUK UPDATE CSV & AI) ---
-      // PERBAIKAN: Alihkan rute dari localhost ke server cloud Vercel
       try {
         await fetch(`${BASE_SERVER_URL}/api/transaksi`, {
           method: 'POST',
@@ -53,12 +48,11 @@ const Tunai = () => {
             suhu: tempWeather.suhu
           }),
         });
-        console.log("✅ Data berhasil dikirim ke Flask di Vercel");
+        print("✅ Data berhasil dikirim ke Flask di Vercel");
       } catch (err) {
         console.error("❌ Gagal mengirim ke Flask Production:", err);
       }
 
-      // --- 2. SIMPAN KE FIRESTORE ---
       await addDoc(collection(db, "transactions"), {
         total_harga: totalPrice,
         pembayaran: "Tunai",
@@ -68,7 +62,6 @@ const Tunai = () => {
         conditions_cuaca: tempWeather.kondisi
       });
 
-      // --- 3. SIMPAN KE HISTORY LOCAL ---
       const now = new Date();
       const dayName = now.toLocaleDateString('id-ID', { weekday: 'long' });
       const fullDate = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -86,7 +79,6 @@ const Tunai = () => {
 
       localStorage.setItem('historyTransaksi', JSON.stringify([...newRecords, ...existingHistory]));
 
-      // --- 4. SIMPAN DATA UNTUK STRUK ---
       const transactionData = {
         totalPrice: totalPrice,
         receivedAmount: numericAmount,
@@ -95,7 +87,6 @@ const Tunai = () => {
       };
       localStorage.setItem('lastTransaction', JSON.stringify(transactionData));
       
-      // --- 5. CLEANUP ---
       localStorage.removeItem('cartData');
       localStorage.removeItem('tempWeatherData');
       
@@ -116,51 +107,52 @@ const Tunai = () => {
   ];
   const uniqueAmounts = [...new Set(quickAmounts)].slice(0, 4); 
 
-  const styles = {
-    container: { minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 40px', borderBottom: '1px solid #eee' },
-    backBtn: { background: 'none', border: 'none', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' },
-    headerTotal: { fontSize: '18px', fontWeight: 'bold', color: '#154784' },
-    content: { maxWidth: '600px', margin: '40px auto', textAlign: 'center', padding: '0 20px' },
-    inputGroup: { marginBottom: '30px' },
-    input: { width: '100%', padding: '15px', fontSize: '16px', textAlign: 'center', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '15px', outline: 'none' },
-    uangPasBtn: { width: '100%', padding: '15px', backgroundColor: '#154784', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' },
-    suggestionSection: { textAlign: 'left' },
-    suggestionLabel: { fontSize: '14px', fontWeight: 'bold', marginBottom: '15px', display: 'block' },
-    gridContainer: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' },
-    amountBtn: { padding: '15px', backgroundColor: 'white', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', fontWeight: '600', color: '#333', cursor: 'pointer', transition: '0.2s' },
-    payBtn: { marginTop: '30px', width: '100%', padding: '15px', backgroundColor: '#27ae60', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }
-  };
-
   return (
-    <div style={styles.container}>
-        <div style={styles.header}>
-            <button style={styles.backBtn} onClick={() => navigate('/pembayaran')}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
+        {/* Header Navigation */}
+        <div className="bg-white px-3 px-md-4 py-3 shadow-sm border-bottom d-flex align-items-center justify-content-between">
+            <button className="btn btn-link text-dark fw-bold d-flex align-items-center gap-2 p-0 text-decoration-none" onClick={() => navigate('/pembayaran')}>
                 <FaArrowLeft /> Tunai
             </button>
-            <div style={styles.headerTotal}>{formatRupiah(totalPrice)}</div>
+            <div className="fw-bold text-primary fs-5">{formatRupiah(totalPrice)}</div>
         </div>
 
-        <div style={styles.content}>
-            <div style={styles.inputGroup}>
-                <input type="number" placeholder="Uang yang diterima" style={styles.input} value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} />
-                <button style={styles.uangPasBtn} onClick={() => setReceivedAmount(totalPrice.toString())}>Uang Pas</button>
+        {/* Form Input Kasir */}
+        <div className="container py-4 px-3" style={{ maxWidth: '550px' }}>
+          <div className="card border-0 shadow-sm p-4 bg-white rounded-3 mb-3 text-center">
+            <div className="mb-4">
+                <input 
+                  type="number" 
+                  placeholder="Input nominal uang diterima..." 
+                  className="form-control bg-light py-3 text-center fs-4 fw-bold font-monospace shadow-none rounded-3 mb-3" 
+                  value={receivedAmount} 
+                  onChange={(e) => setReceivedAmount(e.target.value)} 
+                />
+                <button className="btn btn-primary w-100 fw-bold py-2.5 rounded-3 border-0 shadow-sm" style={{ backgroundColor: '#154784' }} onClick={() => setReceivedAmount(totalPrice.toString())}>
+                  Uang Pas (Pas Tanpa Kembalian)
+                </button>
             </div>
 
-            <div style={styles.suggestionSection}>
-                <span style={styles.suggestionLabel}>Jumlah Lain</span>
-                <div style={styles.gridContainer}>
+            {/* Rekomendasi Lembaran Uang Pintar */}
+            <div className="text-start">
+                <span className="fw-bold text-secondary small d-block mb-3 text-uppercase" style={{ letterSpacing: '0.5px' }}>Saran Nominal Cepat</span>
+                <div className="row g-2">
                     {uniqueAmounts.map((amount, idx) => (
-                        <button key={idx} style={styles.amountBtn} onClick={() => handleQuickAmount(amount)}>
-                            {formatRupiah(amount).replace(',00', '')}
-                        </button>
+                        <div key={idx} className="col-6">
+                          <button className="btn btn-outline-secondary w-100 py-2.5 fw-semibold font-monospace rounded-3 bg-white" style={{ fontSize: '14px' }} onClick={() => handleQuickAmount(amount)}>
+                              {formatRupiah(amount).replace(',00', '')}
+                          </button>
+                        </div>
                     ))}
                 </div>
             </div>
 
             {receivedAmount && (
-                <button style={styles.payBtn} onClick={() => handleProcessPayment(receivedAmount)}>Proses Pembayaran</button>
+                <button className="btn btn-success w-100 fw-bold py-3 rounded-3 border-0 mt-4 fs-6 shadow" style={{ backgroundColor: '#27ae60' }} onClick={() => handleProcessPayment(receivedAmount)}>
+                  Proses & Validasi Pembayaran
+                </button>
             )}
+          </div>
         </div>
     </div>
   );

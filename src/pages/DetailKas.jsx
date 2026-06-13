@@ -1,14 +1,13 @@
 // src/pages/DetailKas.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaMoneyBillWave, FaArrowUp } from 'react-icons/fa'; // Icon simulasi
+import { FaArrowLeft, FaMoneyBillWave, FaArrowUp } from 'react-icons/fa';
 
 const DetailKas = () => {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    // Ambil data dari LocalStorage
     const savedData = localStorage.getItem('kasData');
     if (savedData) {
       setTransactions(JSON.parse(savedData));
@@ -17,96 +16,71 @@ const DetailKas = () => {
 
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  const styles = {
-    container: { minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
-    header: { padding: '20px 40px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: '10px' },
-    backBtn: { background: 'none', border: 'none', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', color: 'black' },
-    content: { padding: '0' },
-    
-    // Transaction Row
-    transactionRow: { borderBottom: '1px solid #ddd' },
-    
-    // Header Row (Icon + Title + Amount)
-    rowHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 40px' },
-    leftSection: { display: 'flex', alignItems: 'center', gap: '15px' },
-    
-    // Icons
-    iconBox: (type) => ({
-        width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `1px solid ${type === 'Uang Masuk' ? '#2ecc71' : '#e74c3c'}`, // Hijau / Merah
-        borderRadius: '4px', color: type === 'Uang Masuk' ? '#2ecc71' : '#e74c3c'
-    }),
-    
-    titleText: (type) => ({
-        fontSize: '14px', fontWeight: '600', color: type === 'Uang Masuk' ? '#2ecc71' : '#e74c3c'
-    }),
-    
-    amountText: (type) => ({
-        fontSize: '14px', fontWeight: 'bold', color: type === 'Uang Masuk' ? '#2ecc71' : '#e74c3c'
-    }),
-
-    // Details Section (Keterangan, Waktu, Nama)
-    detailsSection: { padding: '10px 40px 10px 85px', borderTop: '1px solid #f5f5f5' },
-    detailLabel: { fontSize: '11px', color: '#888', marginBottom: '2px', display: 'block', fontWeight: '600' },
-    detailRowFlex: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 'bold', color: 'black', marginBottom: '10px' },
-    
-    // Catatan Section
-    noteSection: { padding: '0 40px 15px 85px' },
-    noteText: { fontSize: '12px', fontWeight: 'bold', color: 'black' }
-  };
-
   return (
-    <div style={styles.container}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
         {/* Header */}
-        <div style={styles.header}>
-            <button style={styles.backBtn} onClick={() => navigate('/rekap-kas')}>
+        <div className="bg-white px-3 px-md-4 py-3 shadow-sm border-bottom d-flex align-items-center">
+            <button 
+              className="btn btn-link text-dark fw-bold d-flex align-items-center gap-2 p-0 text-decoration-none" 
+              onClick={() => navigate('/rekap-kas')}
+            >
                 <FaArrowLeft /> Detail Kas
             </button>
         </div>
 
         {/* Content List */}
-        <div style={styles.content}>
+        <div className="container-fluid py-3 px-2 px-md-4" style={{ maxWidth: '800px' }}>
             {transactions.length > 0 ? (
-                transactions.map((item) => (
-                    <div key={item.id} style={styles.transactionRow}>
-                        
-                        {/* Baris Atas: Icon, Judul, Harga */}
-                        <div style={styles.rowHeader}>
-                            <div style={styles.leftSection}>
-                                <div style={styles.iconBox(item.type)}>
-                                    {item.type === 'Uang Masuk' ? <FaMoneyBillWave size={14} /> : <FaArrowUp size={14} />}
+                transactions.map((item) => {
+                    const isMasuk = item.type === 'Uang Masuk';
+                    return (
+                        <div key={item.id} className="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
+                            
+                            {/* Baris Atas: Icon, Judul, Harga */}
+                            <div className="p-3 px-md-4 d-flex justify-content-between align-items-center bg-white">
+                                <div className="d-flex align-items-center gap-2.5">
+                                    <div 
+                                      className="d-flex align-items-center justify-content-center rounded-3" 
+                                      style={{ 
+                                        width: '36px', height: '34px', 
+                                        border: `1px solid ${isMasuk ? '#2ecc71' : '#e74c3c'}`,
+                                        color: isMasuk ? '#2ecc71' : '#e74c3c'
+                                      }}
+                                    >
+                                        {isMasuk ? <FaMoneyBillWave size={14} /> : <FaArrowUp size={14} style={{ transform: 'rotate(180deg)' }} />}
+                                    </div>
+                                    <span className="fw-bold small md-normal" style={{ color: isMasuk ? '#2ecc71' : '#e74c3c' }}>{item.type}</span>
                                 </div>
-                                <span style={styles.titleText(item.type)}>{item.type}</span>
+                                <span className="fw-bold" style={{ color: isMasuk ? '#2ecc71' : '#e74c3c', fontSize: '15px' }}>
+                                    {isMasuk ? '+' : '-'}{formatRupiah(item.amount)}
+                                </span>
                             </div>
-                            <span style={styles.amountText(item.type)}>
-                                {item.type === 'Uang Masuk' ? '+' : '-'}{formatRupiah(item.amount).replace('Rp', 'Rp')}
-                            </span>
-                        </div>
 
-                        {/* Baris Detail: Keterangan Waktu & User */}
-                        <div style={styles.detailsSection}>
-                            <span style={styles.detailLabel}>Keterangan :</span>
-                            <div style={styles.detailRowFlex}>
-                                <span>Waktu</span>
-                                <span>{item.date} {item.time}</span>
+                            {/* Baris Detail: Keterangan Waktu & User */}
+                            <div className="p-3 px-md-4 bg-light-subtle border-top border-light" style={{ paddingLeft: window.innerWidth > 576 ? '75px' : '15px' }}>
+                                <small className="text-muted fw-bold d-block mb-1.5" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>RINCIAN DATA :</small>
+                                <div className="d-flex justify-content-between small mb-1">
+                                    <span className="text-secondary">Waktu Transaksi</span>
+                                    <span className="fw-semibold text-dark text-end">{item.date} | {item.time}</span>
+                                </div>
+                                <div className="d-flex justify-content-between small">
+                                    <span className="text-secondary">Nama Kasir</span>
+                                    <span className="fw-semibold text-dark">{item.user}</span>
+                                </div>
                             </div>
-                            <div style={styles.detailRowFlex}>
-                                <span>Nama Kasir</span>
-                                <span>{item.user}</span>
+
+                            {/* Baris Catatan */}
+                            <div className="p-3 px-md-4 bg-white border-top border-light">
+                                <small className="text-muted fw-bold d-block mb-1" style={{ fontSize: '11px' }}>CATATAN :</small>
+                                <span className="text-dark small fw-medium d-block">{item.description}</span>
                             </div>
-                        </div>
 
-                        {/* Baris Catatan */}
-                        <div style={styles.noteSection}>
-                            <span style={styles.detailLabel}>Catatan :</span>
-                            <span style={styles.noteText}>{item.description}</span>
                         </div>
-
-                    </div>
-                ))
+                    );
+                })
             ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                    Belum ada data kas masuk/keluar.
+                <div className="text-center py-5 text-muted small">
+                    Belum ada data kas masuk/keluar harian.
                 </div>
             )}
         </div>

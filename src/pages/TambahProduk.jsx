@@ -5,13 +5,13 @@ import { signOut } from "firebase/auth";
 import { auth } from '../config/firebase';
 import logoImg from '../assets/LogoKasir.jpg'; 
 import { addProduct } from '../services/product_api';
-import { FaUserFriends, FaBox, FaExchangeAlt, FaFileAlt, FaSignOutAlt, FaCalendarCheck, FaChartLine, FaSave, FaArrowLeft } from 'react-icons/fa';
+import Sidebar from '../components/Sidebar'; // Menggunakan Sidebar komponen agar responsif terpusat
+import { FaSave, FaArrowLeft } from 'react-icons/fa';
 
 const TambahProduk = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // State Form
   const [formData, setFormData] = useState({
     nama: '',
     kategori: 'Makanan',
@@ -51,144 +51,41 @@ const TambahProduk = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate('/');
-  };
-
-  // --- STYLES (FULL SCREEN UPDATE) ---
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
-    sidebar: { width: '260px', backgroundColor: '#154784', color: 'white', display: 'flex', flexDirection: 'column', padding: '20px', position: 'fixed', height: '100vh', zIndex: 10 },
-    logoSection: { display: 'flex', alignItems: 'center', marginBottom: '25px', gap: '12px' },
-    menuSectionTitle: { fontSize: '11px', color: '#a0c4eb', marginTop: '12px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', paddingLeft: '5px' },
-    menuItem: { padding: '8px 12px', marginBottom: '2px', borderRadius: '6px', cursor: 'pointer', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', transition: '0.2s' },
-    activeMenu: { backgroundColor: '#427dfc', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', fontWeight: '600' }, 
-    divider: { borderBottom: '1px solid rgba(255,255,255,0.1)', margin: '8px 0' },
-    
-    // Main Content
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', backgroundColor: '#F5F6FA' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' },
-    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937' },
-    
-    // CARD: Hapus maxWidth agar Full Screen
-    card: { 
-        backgroundColor: 'white', 
-        borderRadius: '12px', 
-        padding: '30px', 
-        boxShadow: '0 2px 10px rgba(0,0,0,0.02)', 
-        width: '100%' // Full Width
-    },
-    
-    // Grid Layout untuk Form agar rapi di layar lebar
-    formGrid: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr', // 2 Kolom
-        gap: '20px'
-    },
-    fullWidthGroup: {
-        gridColumn: '1 / -1', // Span ke seluruh kolom
-        marginBottom: '10px'
-    },
-    formGroup: { marginBottom: '10px' },
-    
-    label: { display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' },
-    input: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', backgroundColor: '#f9fafb' },
-    select: { width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none', backgroundColor: '#f9fafb' },
-    
-    btnSave: { 
-        backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', 
-        cursor: 'pointer', fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', 
-        marginTop: '20px' 
-    },
-    btnBack: { backgroundColor: 'transparent', color: '#6b7280', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', marginBottom: '10px' }
-  };
-
   return (
-    <div style={styles.container}>
-      {/* SIDEBAR */}
-      <div style={styles.sidebar}>
-        <div style={styles.logoSection}>
-          <img src={logoImg} alt="Logo" style={{ width: '35px', borderRadius: '5px' }} />
-          <h4 className="m-0 fw-bold" style={{ fontSize: '18px' }}>Kasirku</h4>
-        </div>
-        <div style={styles.divider}></div>
-        
-        <div style={styles.menuItem} onClick={() => navigate('/absensi')}>
-          <FaCalendarCheck size={16} /> <span>Absensi</span>
-        </div>
-        
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Fitur Cerdas</div>
-        <div style={styles.menuItem} onClick={() => navigate('/prediksi')}>
-            <FaChartLine size={14} /> <span>Prediksi Stok</span>
-        </div>
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
+      <Sidebar />
 
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Karyawan</div>
-        <div style={styles.menuItem} onClick={() => navigate('/kelola-karyawan')}>
-            <FaUserFriends size={14} /> <span>Kelola Karyawan</span>
-        </div>
-        
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Barang</div>
-        <div style={{...styles.menuItem, ...styles.activeMenu}}>
-            <FaBox size={14} /> <span>Kelola Produk</span>
-        </div>
-        <div style={styles.menuItem} onClick={() => navigate('/transaksi')}>
-            <FaExchangeAlt size={14} /> <span>Transaksi</span>
-        </div>  
-
-        <div style={styles.divider}></div>
-        <div style={styles.menuSectionTitle}>Laporan</div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-harian')}>
-            <FaFileAlt size={14} /> <span>Rekap Harian</span>
-        </div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-bulanan')}>
-            <FaFileAlt size={14} /> <span>Rekap Bulanan</span>
-        </div>
-        <div style={styles.menuItem} onClick={() => navigate('/rekap-kas')}>
-            <FaFileAlt size={14} /> <span>Rekap Kas</span>
-        </div>
-        
-        <div style={{ marginTop: 'auto', cursor: 'pointer', ...styles.menuItem }} onClick={handleLogout}>
-            <FaSignOutAlt /> <span>Keluar</span>
-        </div>
-      </div>
-
-      {/* MAIN CONTENT */}
-      <div style={styles.mainContent}>
-        
-        <button style={styles.btnBack} onClick={() => navigate('/kelola-produk')}>
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+        <button className="btn btn-link text-secondary d-flex align-items-center gap-2 p-0 text-decoration-none mb-3 small" onClick={() => navigate('/kelola-produk')}>
             <FaArrowLeft /> Kembali ke Daftar
         </button>
 
-        <h2 style={styles.pageTitle}>Tambah Produk Baru</h2>
+        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '24px' }}>Tambah Produk Baru</h2>
 
-        {/* FULL WIDTH CARD */}
-        <div style={styles.card}>
+        <div className="card border-0 shadow-sm p-4 bg-white rounded-3">
             <form onSubmit={handleSubmit}>
-                <div style={styles.formGrid}>
+                <div className="row g-3">
                     
-                    {/* Baris 1: Nama Produk (Full Width) */}
-                    <div style={styles.fullWidthGroup}>
-                        <label style={styles.label}>Nama Produk</label>
+                    {/* Nama Produk (Penuh 1 Baris) */}
+                    <div className="col-12">
+                        <label className="form-label fw-medium text-dark small mb-1">Nama Produk</label>
                         <input 
                             type="text" 
                             name="nama"
                             placeholder="Masukkan nama produk..." 
-                            style={styles.input}
+                            className="form-control bg-light py-2.5"
                             value={formData.nama}
                             onChange={handleChange}
+                            required
                         />
                     </div>
 
-                    {/* Baris 2: Kategori & Harga (Sebelah-sebelahan) */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Kategori</label>
+                    {/* Kategori, Harga Jual, Stok (Grid Adaptif: 1 Kolom di HP, 3 Kolom di Laptop) */}
+                    <div className="col-12 col-md-4">
+                        <label className="form-label fw-medium text-dark small mb-1">Kategori</label>
                         <select 
                             name="kategori"
-                            style={styles.select}
+                            className="form-select bg-light py-2.5"
                             value={formData.kategori}
                             onChange={handleChange}
                         >
@@ -198,40 +95,40 @@ const TambahProduk = () => {
                         </select>
                     </div>
 
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Harga Jual (Rp)</label>
+                    <div className="col-12 col-md-4">
+                        <label className="form-label fw-medium text-dark small mb-1">Harga Jual (Rp)</label>
                         <input 
                             type="number" 
                             name="harga"
                             placeholder="Contoh: 15000" 
-                            style={styles.input}
+                            className="form-control bg-light py-2.5"
                             value={formData.harga}
                             onChange={handleChange}
+                            required
                         />
                     </div>
 
-                    {/* Baris 3: Stok (Sebelah Kiri) */}
-                    <div style={styles.formGroup}>
-                        <label style={styles.label}>Stok Awal</label>
+                    <div className="col-12 col-md-4">
+                        <label className="form-label fw-medium text-dark small mb-1">Stok Awal</label>
                         <input 
                             type="number" 
                             name="stok"
                             placeholder="Contoh: 20" 
-                            style={styles.input}
+                            className="form-control bg-light py-2.5"
                             value={formData.stok}
                             onChange={handleChange}
+                            required
                         />
                     </div>
                 </div>
 
-                <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-                    <button type="submit" style={styles.btnSave} disabled={loading}>
-                        {loading ? "Menyimpan..." : <><FaSave /> Simpan Produk</>}
+                <div className="d-flex justify-content-end mt-4 border-top pt-4">
+                    <button type="submit" className="btn btn-primary fw-bold px-4 py-2.5 w-100 w-sm-auto rounded-3 shadow-sm" disabled={loading}>
+                        {loading ? "Menyimpan..." : <><FaSave className="me-2" /> Simpan Produk</>}
                     </button>
                 </div>
             </form>
         </div>
-
       </div>
     </div>
   );
