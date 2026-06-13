@@ -1,3 +1,4 @@
+// src/pages/Tunai.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -8,6 +9,9 @@ const Tunai = () => {
   const navigate = useNavigate();
   const [totalPrice, setTotalPrice] = useState(0);
   const [receivedAmount, setReceivedAmount] = useState('');
+
+  // Deklarasi URL Server Cloud Vercel Terpusat
+  const BASE_SERVER_URL = 'https://backend-kasirku.vercel.app';
 
   useEffect(() => {
     const savedCart = localStorage.getItem('cartData');
@@ -35,9 +39,9 @@ const Tunai = () => {
 
     try {
       // --- 1. SIMPAN KE API FLASK (UNTUK UPDATE CSV & AI) ---
-      // Baris ini yang akan memicu log di terminal Flask Anda!
+      // PERBAIKAN: Alihkan rute dari localhost ke server cloud Vercel
       try {
-        await fetch('http://localhost:5000/api/transaksi', {
+        await fetch(`${BASE_SERVER_URL}/api/transaksi`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -49,9 +53,9 @@ const Tunai = () => {
             suhu: tempWeather.suhu
           }),
         });
-        console.log("✅ Data berhasil dikirim ke Flask");
+        console.log("✅ Data berhasil dikirim ke Flask di Vercel");
       } catch (err) {
-        console.error("❌ Gagal mengirim ke Flask (Cek apakah server Flask jalan):", err);
+        console.error("❌ Gagal mengirim ke Flask Production:", err);
       }
 
       // --- 2. SIMPAN KE FIRESTORE ---
@@ -61,7 +65,7 @@ const Tunai = () => {
         waktu: serverTimestamp(),
         items: savedCart,
         suhu: tempWeather.suhu,
-        kondisi_cuaca: tempWeather.kondisi
+        conditions_cuaca: tempWeather.kondisi
       });
 
       // --- 3. SIMPAN KE HISTORY LOCAL ---
