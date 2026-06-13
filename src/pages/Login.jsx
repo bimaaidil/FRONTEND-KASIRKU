@@ -25,7 +25,21 @@ const Login = () => {
 
       // 2. Ambil data profil dari database untuk cek Role & Status
       const allEmployees = await getEmployees();
-      const currentUserData = allEmployees.find(emp => emp.email === user.email);
+      let currentUserData = null;
+
+      // --- PERBAIKAN UTAMA: SISTEM PARSING AMAN UNTUK VERCEL ---
+      // Cek jika data langsung berbentuk Array lurus
+      if (Array.isArray(allEmployees)) {
+        currentUserData = allEmployees.find(emp => emp.email === user.email);
+      } 
+      // Cek jika berbentuk objek yang membungkus array di dalam key 'data'
+      else if (allEmployees && Array.isArray(allEmployees.data)) {
+        currentUserData = allEmployees.data.find(emp => emp.email === user.email);
+      } 
+      // Cek jika berbentuk objek yang membungkus array di dalam key 'karyawan'
+      else if (allEmployees && Array.isArray(allEmployees.karyawan)) {
+        currentUserData = allEmployees.karyawan.find(emp => emp.email === user.email);
+      }
 
       if (currentUserData) {
         // 3. Cek apakah akun sudah diverifikasi Admin
@@ -51,7 +65,7 @@ const Login = () => {
       } else if (err.code === 'auth/invalid-credential') {
         setError("Kredensial tidak valid.");
       } else {
-        setError("Terjadi kesalahan sistem.");
+        setError("Terjadi kesalahan sistem saat memproses profil.");
       }
     } finally {
       setLoading(false);
