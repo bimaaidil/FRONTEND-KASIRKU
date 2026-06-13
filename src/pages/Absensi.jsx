@@ -30,15 +30,12 @@ const Absensi = () => {
   const [dataRekap, setDataRekap] = useState([]);
   const [loadingRekap, setLoadingRekap] = useState(false);
 
-  // Deklarasi URL Server Cloud Vercel Terpusat
   const BASE_SERVER_URL = 'https://backend-kasirku.vercel.app';
 
   const loadData = async () => {
     setLoading(true);
     try {
       const empData = await getEmployees();
-      
-      // Amankan pembacaan data jika response berbentuk bungkus objek
       const cleanEmpData = Array.isArray(empData) 
         ? empData 
         : (empData?.data && Array.isArray(empData.data)) ? empData.data : [];
@@ -58,8 +55,6 @@ const Absensi = () => {
 
     try {
       const attData = await getAttendance();
-      
-      // Amankan penampung riwayat kehadiran harian
       const cleanAttData = Array.isArray(attData) 
         ? attData 
         : (attData?.data && Array.isArray(attData.data)) ? attData.data : [];
@@ -75,10 +70,7 @@ const Absensi = () => {
     if (!bulanPilihan || userRole !== 'Admin') return;
     setLoadingRekap(true);
     try {
-      // PERBAIKAN 1: Alihkan rute dari localhost ke server cloud Vercel
       const response = await axios.get(`${BASE_SERVER_URL}/api/absensi/rekap-bulanan?bulan=${bulanPilihan}`);
-      
-      // PERBAIKAN 2: Proteksi tipe data sebelum disimpan ke state
       if (response.data && Array.isArray(response.data)) {
         setDataRekap(response.data);
       } else if (response.data && Array.isArray(response.data.data)) {
@@ -88,7 +80,7 @@ const Absensi = () => {
       }
     } catch (error) {
       console.error("Gagal ambil rekap:", error);
-      setDataRekap([]); // Fallback array kosong agar UI tidak crash .map()
+      setDataRekap([]);
     } finally {
       setLoadingRekap(false);
     }
@@ -130,7 +122,6 @@ const Absensi = () => {
     if (!selectedEmp) return alert("Pilih nama Anda dulu!");
     const empObj = employees.find(e => e.id === selectedEmp);
     try {
-        // PERBAIKAN 3: Alihkan rute clock-in dari localhost ke server cloud Vercel
         await axios.post(`${BASE_SERVER_URL}/api/absensi/clock-in`, {
             employee_id: selectedEmp,
             employee_name: empObj.nama,
@@ -150,71 +141,48 @@ const Absensi = () => {
     } catch (error) { alert(error.response?.data?.error || "Gagal absen pulang"); }
   };
 
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', paddingBottom: '100px' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' },
-    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 },
-    profileNav: { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', padding: '5px 10px', borderRadius: '10px', transition: '0.3s' },
-    actionCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' },
-    select: { padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: '300px', outline: 'none', backgroundColor: '#f9fafb' },
-    btnIn: { backgroundColor: '#2563eb', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
-    btnOut: { backgroundColor: '#dc2626', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
-    btnLembur: { backgroundColor: '#f59e0b', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
-    btnDone: { backgroundColor: '#16a34a', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'not-allowed', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
-    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', marginBottom: '40px' },
-    rekapCard: { backgroundColor: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', borderTop: '5px solid #154784' }, 
-    tableHeader: { textAlign: 'left', padding: '16px', fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' },
-    tableCell: { padding: '16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #f9fafb' },
-    badgeReg: { backgroundColor: '#dbeafe', color: '#1e40af', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' },
-    badgeLembur: { backgroundColor: '#fef3c7', color: '#92400e', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' },
-    totalBadge: { backgroundColor: '#dbeafe', color: '#1e40af', padding: '5px 12px', borderRadius: '20px', fontWeight: 'bold', fontSize: '14px' },
-    rekapHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-    monthInput: { padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '14px', outline: 'none' }
-  };
-
   return (
-    <div style={styles.container}>
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
 
-      <div style={styles.mainContent}>
-        <div style={styles.header}>
+      {/* Main content adaptif margin untuk Mobile/PC */}
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0', paddingBottom: '100px' }}>
+        
+        {/* HEADER RESPONSIVE */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
           <div>
-             <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
-             <p style={{margin:0, fontSize:'14px', color:'#6b7280'}}>Selamat Datang, <strong>{userName}</strong></p>
+             <h2 className="fw-bold text-dark m-0" style={{ fontSize: '24px' }}>Absensi & Monitoring</h2>
+             <p className="text-muted m-0" style={{ fontSize: '14px' }}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
 
-          <div style={{display: 'flex', alignItems: 'center', gap: '30px'}}>
-            <div style={{fontSize: '14px', color: '#6b7280', textAlign:'right'}}>
+          <div className="d-flex align-items-center justify-content-between justify-content-md-end gap-3">
+            <div className="text-muted small text-md-end">
               {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
-              <br /> 
-              {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+              <br className="d-none d-md-block" /> 
+              <span className="badge bg-secondary ms-1 ms-md-0">{waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB</span>
             </div>
             
-            <div 
-              style={styles.profileNav} 
-              onClick={() => navigate('/profile')}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f7ff'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              <span style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }}>{userName}</span>
+            <div className="d-flex align-items-center gap-2 p-1 pe-2 rounded" style={{ cursor: 'pointer', transition: '0.3s' }} onClick={() => navigate('/profile')}>
+              <span className="fw-semibold small text-dark d-none d-sm-inline">{userName}</span>
               <FaUserCircle style={{ fontSize: '32px', color: '#154784' }} />
             </div>
           </div>
         </div>
 
-        <div style={styles.actionCard}>
-            <div>
-                <label style={{display: 'block', marginBottom: '8px', fontWeight: '500', color: '#374151'}}>
+        {/* ACTION CARD RESPONSIVE */}
+        <div className="card border-0 shadow-sm p-4 mb-4 rounded-3">
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div className="w-100" style={{ maxWidth: '400px' }}>
+                <label className="form-label fw-medium text-secondary small">
                   {userRole === 'Admin' ? 'Admin Monitoring' : 'Konfirmasi Kehadiran'}
                 </label>
                 
                 {userRole === 'Admin' ? (
-                  <div style={{color: '#6b7280', fontSize: '14px', padding: '10px 0'}}>
+                  <div className="text-muted small py-1">
                     Akun Admin tidak diperlukan untuk absen fisik harian.
                   </div>
                 ) : (
-                  <select style={styles.select} value={selectedEmp} onChange={(e) => setSelectedEmp(e.target.value)}>
+                  <select className="form-select bg-light" value={selectedEmp} onChange={(e) => setSelectedEmp(e.target.value)}>
                       {employees.length === 0 ? (
                         <option value="">Nama Anda tidak terdaftar</option>
                       ) : (
@@ -227,144 +195,147 @@ const Absensi = () => {
             </div>
             
             {userRole !== 'Admin' && (
-              <div>
+              <div className="w-100 d-flex justify-content-md-end">
                   {statusTombol === 'MASUK_REGULER' && (
-                      <button style={styles.btnIn} onClick={() => handleClockIn('Reguler')}>
-                          <FaClock /> ABSEN MASUK
+                      <button className="btn btn-primary fw-bold w-100 w-md-auto px-4 py-2" onClick={() => handleClockIn('Reguler')}>
+                          <FaClock className="me-2" /> ABSEN MASUK
                       </button>
                   )}
                   {statusTombol === 'PULANG_REGULER' && (
-                      <button style={styles.btnOut} onClick={handleClockOut}>
-                          <FaSignOutAlt /> PULANG SHIFT
+                      <button className="btn btn-danger fw-bold w-100 w-md-auto px-4 py-2" onClick={handleClockOut}>
+                          <FaSignOutAlt className="me-2" /> PULANG SHIFT
                       </button>
                   )}
                   {statusTombol === 'MASUK_LEMBUR' && (
-                      <div style={{display:'flex', alignItems:'center', gap: '15px'}}>
-                          <span style={{color:'#059669', fontWeight:'bold', fontSize:'13px'}}>Shift Selesai ✅</span>
-                          <button style={styles.btnLembur} onClick={() => handleClockIn('Lembur')}>
-                              <FaBriefcase /> MULAI LEMBUR
+                      <div className="d-flex flex-column flex-sm-row align-items-center gap-2 w-100 w-md-auto">
+                          <span className="text-success fw-bold small">Shift Selesai ✅</span>
+                          <button className="btn btn-warning text-white fw-bold w-100 w-sm-auto px-4 py-2" onClick={() => handleClockIn('Lembur')}>
+                              <FaBriefcase className="me-2" /> MULAI LEMBUR
                           </button>
                       </div>
                   )}
                   {statusTombol === 'PULANG_LEMBUR' && (
-                      <button style={styles.btnOut} onClick={handleClockOut}>
-                          <FaSignOutAlt /> SELESAI LEMBUR
+                      <button className="btn btn-danger fw-bold w-100 w-md-auto px-4 py-2" onClick={handleClockOut}>
+                          <FaSignOutAlt className="me-2" /> SELESAI LEMBUR
                       </button>
                   )}
                   {statusTombol === 'SELESAI_TOTAL' && (
-                      <button style={styles.btnDone} disabled>
-                          <FaCheckCircle /> TOTAL SELESAI
+                      <button className="btn btn-success fw-bold w-100 w-md-auto px-4 py-2" disabled>
+                          <FaCheckCircle className="me-2" /> TOTAL SELESAI
                       </button>
                   )}
               </div>
             )}
+          </div>
         </div>
 
-        <div style={styles.card}>
-            <h3 style={{fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937'}}>
+        {/* RIWAYAT TABLE CARD RESPONSIVE */}
+        <div className="card border-0 shadow-sm p-4 mb-4 rounded-3">
+            <h3 className="fw-bold text-dark mb-3" style={{ fontSize: '16px' }}>
                {userRole === 'Admin' ? 'Riwayat Hari Ini (Semua)' : 'Riwayat Absensi Saya'}
             </h3>
-            {loading ? <div style={{textAlign: 'center', padding: '20px'}}><Loader className="animate-spin" /></div> : 
-              attendanceList.length === 0 ? <div style={{textAlign: 'center', color: '#9ca3af'}}>Belum ada riwayat hari ini.</div> : (
-                <table style={{width: '100%', borderCollapse: 'collapse'}}>
+            {loading ? (
+              <div className="text-center py-3"><Loader className="animate-spin text-primary" /></div>
+            ) : attendanceList.length === 0 ? (
+              <div className="text-center text-muted small py-3">Belum ada riwayat hari ini.</div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle text-nowrap m-0">
                     <thead>
-                        <tr>
-                            <th style={styles.tableHeader}>Tanggal</th>
-                            <th style={styles.tableHeader}>Nama</th>
-                            <th style={styles.tableHeader}>Jenis</th>
-                            <th style={styles.tableHeader}>Masuk</th>
-                            <th style={styles.tableHeader}>Pulang</th>
-                            <th style={styles.tableHeader}>Status</th>
+                        <tr className="text-secondary small text-uppercase">
+                            <th className="border-0 pb-3">Tanggal</th>
+                            <th className="border-0 pb-3">Nama</th>
+                            <th className="border-0 pb-3">Jenis</th>
+                            <th className="border-0 pb-3">Masuk</th>
+                            <th className="border-0 pb-3">Pulang</th>
+                            <th className="border-0 pb-3">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         {attendanceList
-                          .filter(item => {
-                            if (userRole === 'Admin') return true;
-                            return item.employee_name === userName;
-                          })
+                          .filter(item => userRole === 'Admin' ? true : item.employee_name === userName)
                           .slice(0, 5)
                           .map((item) => ( 
-                            <tr key={item.id} style={{borderBottom: '1px solid #f9fafb'}}>
-                                <td style={styles.tableCell}>{item.date}</td>
-                                <td style={{...styles.tableCell, fontWeight: '500'}}>{item.employee_name}</td>
-                                <td style={styles.tableCell}>
-                                    <span style={(!item.jenis || item.jenis === 'Reguler') ? styles.badgeReg : styles.badgeLembur}>
+                            <tr key={item.id} className="border-top">
+                                <td className="py-3 text-secondary">{item.date}</td>
+                                <td className="py-3 fw-medium text-dark">{item.employee_name}</td>
+                                <td className="py-3">
+                                    <span className={`badge rounded-pill fw-bold ${(!item.jenis || item.jenis === 'Reguler') ? 'bg-primary-subtle text-primary' : 'bg-warning-subtle text-warning'}`} style={{ fontSize: '11px', padding: '4px 10px' }}>
                                         {(!item.jenis ? 'REGULER' : item.jenis.toUpperCase())}
                                     </span>
                                 </td>
-                                <td style={{...styles.tableCell, color: '#2563eb'}}>{item.clock_in}</td>
-                                <td style={{...styles.tableCell, color: '#dc2626'}}>{item.clock_out}</td>
-                                <td style={styles.tableCell}>{item.status}</td>
+                                <td className="py-3 text-primary fw-medium">{item.clock_in}</td>
+                                <td className="py-3 text-danger fw-medium">{item.clock_out}</td>
+                                <td className="py-3 text-muted">{item.status}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+              </div>
             )}
         </div>
 
+        {/* AREA OWNER ADMIN */}
         {userRole === 'Admin' && (
           <>
-            <div style={{ borderTop: '2px dashed #cbd5e1', margin: '40px 0', position: 'relative' }}>
-                <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#F5F6FA', padding: '0 15px', color: '#64748b', fontSize: '14px', fontWeight: '500' }}>AREA MONITORING PEMILIK</span>
+            <div className="my-5 position-relative text-center">
+                <hr className="border-secondary border-dashed" />
+                <span className="position-absolute top-50 start-50 translate-middle bg-light px-3 text-secondary fw-medium small" style={{ letterSpacing: '1px' }}>AREA MONITORING PEMILIK</span>
             </div>
 
-            <div style={styles.rekapCard}>
-                <div style={styles.rekapHeader}>
+            <div className="card border-0 shadow-sm p-4 rounded-3" style={{ borderTop: '5px solid #154784' }}>
+                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
                     <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <FaChartLine color="#154784"/> Rekapitulasi Kehadiran Bulanan
+                        <h3 className="fw-bold text-dark m-0" style={{ fontSize: '18px' }}>
+                            <FaChartLine className="me-2" style={{ color: '#154784' }}/> Rekapitulasi Kehadiran Bulanan
                         </h3>
-                        <p style={{ fontSize: '13px', color: '#6b7280', margin: '5px 0 0 0' }}>Data kehadiran dan lembur untuk perhitungan gaji.</p>
+                        <p className="text-muted small m-0 mt-1">Data kehadiran dan lembur untuk perhitungan gaji.</p>
                     </div>
-                    <div style={{display: 'flex', gap: '10px'}}>
-                        <input 
-                            type="month" 
-                            style={styles.monthInput} 
-                            value={bulanPilihan}
-                            onChange={(e) => setBulanPilihan(e.target.value)}
-                        />
-                        <button style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }} onClick={() => window.print()}>
-                            <FaPrint /> Cetak
+                    <div className="d-flex gap-2 w-100 w-sm-auto">
+                        <input type="month" className="form-control form-control-sm bg-light" style={{ maxWidth: '160px' }} value={bulanPilihan} onChange={(e) => setBulanPilihan(e.target.value)} />
+                        <button className="btn btn-success btn-sm d-flex align-items-center gap-1 fw-medium" onClick={() => window.print()}>
+                            <FaPrint size={12} /> Cetak
                         </button>
                     </div>
                 </div>
 
                 {loadingRekap ? (
-                    <div style={{textAlign: 'center', padding: '30px', color: '#6b7280'}}>Menghitung data...</div>
+                    <div className="text-center text-secondary py-4 small">Menghitung data...</div>
                 ) : dataRekap.length === 0 ? (
-                    <div style={{textAlign: 'center', padding: '30px', color: '#9ca3af'}}>Tidak ada data rekap pada bulan ini.</div>
+                    <div className="text-center text-muted py-4 small">Tidak ada data rekap pada bulan ini.</div>
                 ) : (
-                    <table style={{width: '100%', borderCollapse: 'collapse', marginTop: '10px'}}>
+                  <div className="table-responsive">
+                    <table className="table align-middle text-nowrap m-0">
                         <thead>
-                            <tr style={{backgroundColor: '#f8fafc'}}>
-                                <th style={styles.tableHeader}>No</th>
-                                <th style={styles.tableHeader}>Nama Karyawan</th>
-                                <th style={styles.tableHeader}>Total Masuk</th>
-                                <th style={styles.tableHeader}>Total Lembur</th>
-                                <th style={styles.tableHeader}>Status</th>
+                            <tr className="bg-light text-secondary small text-uppercase">
+                                <th className="ps-3 py-3">No</th>
+                                <th className="py-3">Nama Karyawan</th>
+                                <th className="py-3 text-center">Total Masuk</th>
+                                <th className="py-3 text-center">Total Lembur</th>
+                                <th className="py-3">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {dataRekap.map((item, index) => (
-                                <tr key={index} style={{borderBottom: '1px solid #f1f5f9'}}>
-                                    <td style={styles.tableCell}>{index + 1}</td>
-                                    <td style={{...styles.tableCell, fontWeight: 'bold'}}>{item.nama}</td>
-                                    <td style={styles.tableCell}>
-                                        <span style={styles.totalBadge}>{item.total_hadir} Hari</span>
+                                <tr key={index} className="border-top">
+                                    <td className="ps-3 py-3 text-muted">{index + 1}</td>
+                                    <td className="py-3 fw-bold text-dark">{item.nama}</td>
+                                    <td className="py-3 text-center">
+                                        <span className="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill">{item.total_hadir} Hari</span>
                                     </td>
-                                    <td style={styles.tableCell}>
+                                    <td className="py-3 text-center">
                                          {item.total_lembur > 0 ? (
-                                            <span style={{backgroundColor:'#fef3c7', color:'#92400e', padding:'5px 10px', borderRadius:'15px', fontWeight:'bold', fontSize:'12px'}}>
+                                            <span className="badge bg-warning-subtle text-warning-baseline fw-bold px-3 py-2 rounded-pill">
                                                 {item.total_lembur} Kali
                                             </span>
-                                         ) : <span style={{color:'#9ca3af'}}>-</span>}
+                                         ) : <span className="text-muted">-</span>}
                                     </td>
-                                    <td style={{...styles.tableCell, color: '#059669', fontSize: '13px'}}>Aktif</td>
+                                    <td className="py-3 text-success small fw-medium">Aktif</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                  </div>
                 )}
             </div>
           </>

@@ -1,12 +1,12 @@
 // src/pages/KelolaProduk.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar'; // <--- IMPORT SIDEBAR TUNGGAL
+import Sidebar from '../components/Sidebar'; 
 
 // --- IMPORT API ---
 import { getProducts, deleteProduct } from '../services/product_api';
 
-// Icon khusus konten halaman
+// Icons
 import { FaPlus, FaTrash, FaEdit, FaSearch } from 'react-icons/fa';
 import { Loader } from 'lucide-react';
 
@@ -16,14 +16,11 @@ const KelolaProduk = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // --- FUNGSI AMBIL DATA DARI BACKEND ---
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const data = await getProducts();
       
-      // --- PERBAIKAN UTAMA: SISTEM PARSING AMAN UNTUK VERCEL ---
-      // Memastikan data yang masuk ke state 'products' selalu berbentuk Array murni
       if (Array.isArray(data)) {
         setProducts(data);
       } else if (data && Array.isArray(data.data)) {
@@ -31,11 +28,11 @@ const KelolaProduk = () => {
       } else if (data && Array.isArray(data.products)) {
         setProducts(data.products);
       } else {
-        setProducts([]); // Fallback ke array kosong jika format rusak
+        setProducts([]); 
       }
     } catch (error) {
       console.error("Error load produk:", error);
-      setProducts([]); // Set ke array kosong saat catch eror agar UI tidak crash
+      setProducts([]); 
     } finally {
       setLoading(false);
     }
@@ -45,7 +42,6 @@ const KelolaProduk = () => {
     fetchProducts();
   }, []);
 
-  // --- FUNGSI HAPUS PRODUK ---
   const handleDelete = async (id, nama) => {
     if (window.confirm(`Yakin ingin menghapus ${nama}?`)) {
       try {
@@ -57,100 +53,73 @@ const KelolaProduk = () => {
     }
   };
 
-  // Filter Pencarian yang Aman (Gunakan opsional chaining ?. untuk menghindari crash data null)
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => product.nama?.toLowerCase().includes(searchTerm.toLowerCase()))
     : [];
 
-  // Styles (Sudah dibersihkan dari Sidebar)
-  const styles = {
-    container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
-    mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', backgroundColor: '#F5F6FA' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' },
-    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937' },
-    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' },
-    tableHeader: { textAlign: 'left', padding: '16px', fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' },
-    tableCell: { padding: '16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #f9fafb' },
-    btnAction: { border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }
-  };
-
   return (
-    <div style={styles.container}>
-      {/* 1. PANGGIL SIDEBAR */}
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
 
-      {/* 2. MAIN CONTENT */}
-      <div style={styles.mainContent}>
-        <div style={styles.header}>
-          <h2 style={styles.pageTitle}>Kelola Produk</h2>
-          <div style={{display: 'flex', gap: '15px'}}>
-            {/* Search Bar */}
-            <div style={{display: 'flex', alignItems: 'center', backgroundColor: 'white', padding: '0 15px', borderRadius: '8px', border: '1px solid #e5e7eb', width: '250px'}}>
-                <FaSearch color="#9ca3af" />
-                <input 
-                    type="text" 
-                    placeholder="Cari produk..." 
-                    style={{border: 'none', outline: 'none', padding: '10px', width: '100%'}}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+        
+        {/* HEADER PRODUCTS RESPONSIVE */}
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+          <h2 className="fw-bold text-dark m-0" style={{ fontSize: '24px' }}>Kelola Produk</h2>
+          <div className="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
+            {/* Search Box */}
+            <div className="d-flex align-items-center bg-white px-3 rounded-3 border w-100" style={{ maxWidth: window.innerWidth > 576 ? '250px' : '100%' }}>
+                <FaSearch className="text-muted" />
+                <input type="text" className="form-control border-0 bg-transparent shadow-none py-2" placeholder="Cari produk..." onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
-            {/* Tombol Tambah */}
-            <button 
-                onClick={() => navigate('/tambah-produk')}
-                style={{backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500'}}
-            >
+            <button className="btn btn-primary d-flex align-items-center justify-content-center gap-2 py-2 px-3 rounded-3 fw-medium text-nowrap" onClick={() => navigate('/tambah-produk')}>
                 <FaPlus size={14} /> Tambah Produk
             </button>
           </div>
         </div>
 
-        {/* TABLE CARD */}
-        <div style={styles.card}>
+        {/* TABLE COMPONENT CARD */}
+        <div className="card border-0 shadow-sm p-4 rounded-3">
             {loading ? (
-                <div style={{padding: '40px', textAlign: 'center', color: '#6b7280'}}>
-                    <Loader className="animate-spin" style={{margin: '0 auto 10px'}} /> 
+                <div className="text-center py-4 text-secondary">
+                    <Loader className="animate-spin mb-2 mx-auto text-primary" /> 
                     Memuat Data Produk...
                 </div>
             ) : filteredProducts.length === 0 ? (
-                <div style={{padding: '40px', textAlign: 'center', color: '#6b7280'}}>
+                <div className="text-center py-4 text-secondary">
                     Belum ada data produk. Silakan tambah produk baru.
                 </div>
             ) : (
-                <table style={{width: '100%', borderCollapse: 'collapse'}}>
+              <div className="table-responsive">
+                <table className="table align-middle text-nowrap m-0">
                     <thead>
-                        <tr>
-                            <th style={styles.tableHeader}>No</th>
-                            <th style={styles.tableHeader}>Nama Produk</th>
-                            <th style={styles.tableHeader}>Kategori</th>
-                            <th style={styles.tableHeader}>Harga</th>
-                            <th style={styles.tableHeader}>Stok</th>
-                            <th style={styles.tableHeader}>Aksi</th>
+                        <tr className="text-secondary small text-uppercase">
+                            <th className="border-0 pb-3">No</th>
+                            <th className="border-0 pb-3">Nama Produk</th>
+                            <th className="border-0 pb-3">Kategori</th>
+                            <th className="border-0 pb-3">Harga</th>
+                            <th className="border-0 pb-3">Stok</th>
+                            <th className="border-0 pb-3 text-center" style={{ width: '160px' }}>Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredProducts.map((item, index) => (
-                            <tr key={item.id} style={{borderBottom: '1px solid #f9fafb'}}>
-                                <td style={styles.tableCell}>{index + 1}</td>
-                                <td style={{...styles.tableCell, fontWeight: '500'}}>{item.nama}</td>
-                                <td style={styles.tableCell}>
-                                    <span style={{backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '12px'}}>
+                            <tr key={item.id} className="border-top">
+                                <td className="py-3 text-muted">{index + 1}</td>
+                                <td className="py-3 fw-medium text-dark">{item.nama}</td>
+                                <td className="py-3">
+                                    <span className="badge bg-primary-subtle text-primary fw-semibold px-2.5 py-1.5 rounded">
                                         {item.kategori}
                                     </span>
                                 </td>
-                                <td style={styles.tableCell}>Rp {item.harga ? parseInt(item.harga).toLocaleString('id-ID') : 0}</td>
-                                <td style={styles.tableCell}>{item.stok}</td>
-                                <td style={styles.tableCell}>
-                                    <div style={{display: 'flex', gap: '10px'}}>
-                                        <button 
-                                            onClick={() => navigate(`/kelola-produk/edit/${item.id}`)}
-                                            style={{...styles.btnAction, backgroundColor: '#f3f4f6', color: '#4b5563'}}
-                                        >
+                                <td className="py-3 fw-medium text-dark">Rp {item.harga ? parseInt(item.harga).toLocaleString('id-ID') : 0}</td>
+                                <td className="py-3 text-dark font-monospace">{item.stok}</td>
+                                <td className="py-3">
+                                    <div className="d-flex gap-2 justify-content-center">
+                                        <button className="btn btn-light btn-sm border d-inline-flex align-items-center gap-1 py-1.5 fw-medium text-secondary" onClick={() => navigate(`/kelola-produk/edit/${item.id}`)}>
                                             <FaEdit size={12} /> Edit
                                         </button>
-                                        <button 
-                                            onClick={() => handleDelete(item.id, item.nama)}
-                                            style={{...styles.btnAction, backgroundColor: '#fee2e2', color: '#dc2626'}}
-                                        >
+                                        <button className="btn btn-danger-subtle text-danger btn-sm d-inline-flex align-items-center gap-1 py-1.5 fw-medium" onClick={() => handleDelete(item.id, item.nama)}>
                                             <FaTrash size={12} /> Hapus
                                         </button>
                                     </div>
@@ -159,6 +128,7 @@ const KelolaProduk = () => {
                         ))}
                     </tbody>
                 </table>
+              </div>
             )}
         </div>
       </div>
