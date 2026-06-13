@@ -1,6 +1,8 @@
+// src/services/attendance_api.js
 import axios from 'axios';
 
-const API_URL = 'https://backend-kasirku.vercel.app';
+// Menambahkan sub-route /api/absensi agar selaras dengan Blueprint Flask
+const API_URL = 'https://backend-kasirku.vercel.app/api/absensi';
 
 // Ambil Riwayat Absensi
 export const getAttendance = async () => {
@@ -9,10 +11,11 @@ export const getAttendance = async () => {
 };
 
 // Kirim Absen Masuk
-export const clockIn = async (employeeId, employeeName) => {
+export const clockIn = async (employeeId, employeeName, jenisAbsen = 'Reguler') => {
   const response = await axios.post(`${API_URL}/clock-in`, { 
     employee_id: employeeId,
-    employee_name: employeeName
+    employee_name: employeeName,
+    jenis_absen: jenisAbsen
   });
   return response.data;
 };
