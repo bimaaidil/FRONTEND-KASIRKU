@@ -1,8 +1,7 @@
 // src/services/employee_api.js
-import axios from 'react-native-axios' // atau 'axios' sesuai library utama proyekmu
 import axios from 'axios';
 
-// PERBAIKAN: Arahkan BASE URL langsung ke endpoint blueprint karyawan Flask (/api/karyawan)
+// Arahkan BASE URL langsung ke endpoint blueprint karyawan Flask (/api/karyawan)
 const API_URL = 'https://backend-kasirku.vercel.app/api/karyawan';
 
 // --- AMBIL SEMUA DATA KARYAWAN ---
@@ -10,7 +9,7 @@ export const getEmployees = async () => {
   try {
     const response = await axios.get(API_URL);
     
-    // PENGAMAN DATA: Pastikan data yang dilempar kembali ke Login.jsx adalah murni Array data
+    // PENGAMAN DATA: Memastikan format yang dikembalikan adalah Array lurus
     if (response.data && Array.isArray(response.data)) {
       return response.data;
     } else if (response.data && Array.isArray(response.data.data)) {
