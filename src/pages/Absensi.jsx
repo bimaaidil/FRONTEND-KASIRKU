@@ -1,4 +1,3 @@
-// src/pages/Absensi.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; 
@@ -9,18 +8,16 @@ import { getEmployees } from '../services/employee_api';
 import { getAttendance, clockOut } from '../services/attendance_api'; 
 
 // Icons
-import { FaSignOutAlt, FaClock, FaCheckCircle, FaPrint, FaBriefcase, FaChartLine } from 'react-icons/fa';
+import { FaSignOutAlt, FaClock, FaCheckCircle, FaPrint, FaBriefcase, FaChartLine, FaUserCircle } from 'react-icons/fa';
 import { Loader } from 'lucide-react';
 
 const Absensi = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
-  // Ambil Data Role & Nama dari Login
   const userRole = localStorage.getItem('userRole');
   const userName = localStorage.getItem('userName');
 
-  // --- STATE DATA ---
   const [employees, setEmployees] = useState([]); 
   const [attendanceList, setAttendanceList] = useState([]); 
   const [selectedEmp, setSelectedEmp] = useState(''); 
@@ -28,30 +25,22 @@ const Absensi = () => {
   const [statusTombol, setStatusTombol] = useState('MASUK_REGULER'); 
   const [waktuSekarang, setWaktuSekarang] = useState(new Date());
 
-  // --- STATE REKAP (ADMIN ONLY) ---
   const [bulanPilihan, setBulanPilihan] = useState(new Date().toISOString().slice(0, 7)); 
   const [dataRekap, setDataRekap] = useState([]);
   const [loadingRekap, setLoadingRekap] = useState(false);
 
-  // --- 1. LOAD DATA HARIAN ---
   const loadData = async () => {
     setLoading(true);
     try {
       const empData = await getEmployees();
-      
-      // LOGIKA FILTER DROPDOWN: Karyawan hanya melihat namanya sendiri
       const filteredEmps = empData.filter(emp => {
         if (userRole === 'Admin') return false; 
         return emp.nama === userName; 
       });
-
       setEmployees(filteredEmps);
-
-      // AUTO-SELECT untuk Karyawan
       if (filteredEmps.length > 0) {
         setSelectedEmp(filteredEmps[0].id);
       }
-
     } catch (error) { 
       console.error("Gagal ambil karyawan:", error); 
     }
@@ -64,7 +53,6 @@ const Absensi = () => {
     } finally { setLoading(false); }
   };
 
-  // --- 2. LOAD DATA REKAP (ADMIN ONLY) ---
   const fetchRekap = async () => {
     if (!bulanPilihan || userRole !== 'Admin') return;
     setLoadingRekap(true);
@@ -88,7 +76,6 @@ const Absensi = () => {
     fetchRekap();
   }, [bulanPilihan, attendanceList]);
 
-  // --- LOGIKA PENENTUAN STATUS TOMBOL ---
   useEffect(() => {
     if (!selectedEmp) { setStatusTombol('MASUK_REGULER'); return; }
     const todayStr = waktuSekarang.toISOString().split('T')[0];
@@ -134,12 +121,12 @@ const Absensi = () => {
     } catch (error) { alert(error.response?.data?.error || "Gagal absen pulang"); }
   };
 
-  // Styles
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
     mainContent: { marginLeft: '260px', flex: 1, padding: '30px 40px', paddingBottom: '100px' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' },
-    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937' },
+    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 },
+    profileNav: { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', padding: '5px 10px', borderRadius: '10px', transition: '0.3s' },
     actionCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' },
     select: { padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: '300px', outline: 'none', backgroundColor: '#f9fafb' },
     btnIn: { backgroundColor: '#2563eb', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center' },
@@ -167,14 +154,26 @@ const Absensi = () => {
              <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
              <p style={{margin:0, fontSize:'14px', color:'#6b7280'}}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
-          <div style={{fontSize: '14px', color: '#6b7280', textAlign:'right'}}>
-            {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
-             <br /> 
-            {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+
+          <div style={{display: 'flex', alignItems: 'center', gap: '30px'}}>
+            <div style={{fontSize: '14px', color: '#6b7280', textAlign:'right'}}>
+              {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
+              <br /> 
+              {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+            </div>
+            
+            <div 
+              style={styles.profileNav} 
+              onClick={() => navigate('/profile')}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f7ff'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <span style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }}>{userName}</span>
+              <FaUserCircle style={{ fontSize: '32px', color: '#154784' }} />
+            </div>
           </div>
         </div>
 
-        {/* BAGIAN ABSENSI */}
         <div style={styles.actionCard}>
             <div>
                 <label style={{display: 'block', marginBottom: '8px', fontWeight: '500', color: '#374151'}}>
@@ -232,13 +231,12 @@ const Absensi = () => {
             )}
         </div>
 
-        {/* RIWAYAT HARIAN (DIFILTER BERDASARKAN PRIVASI) */}
         <div style={styles.card}>
             <h3 style={{fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937'}}>
                {userRole === 'Admin' ? 'Riwayat Hari Ini (Semua)' : 'Riwayat Absensi Saya'}
             </h3>
             {loading ? <div style={{textAlign: 'center', padding: '20px'}}><Loader className="animate-spin" /></div> : 
-             attendanceList.length === 0 ? <div style={{textAlign: 'center', color: '#9ca3af'}}>Belum ada riwayat hari ini.</div> : (
+              attendanceList.length === 0 ? <div style={{textAlign: 'center', color: '#9ca3af'}}>Belum ada riwayat hari ini.</div> : (
                 <table style={{width: '100%', borderCollapse: 'collapse'}}>
                     <thead>
                         <tr>
@@ -253,9 +251,7 @@ const Absensi = () => {
                     <tbody>
                         {attendanceList
                           .filter(item => {
-                            // JIKA ADMIN: Tampilkan semua
                             if (userRole === 'Admin') return true;
-                            // JIKA KARYAWAN: Hanya tampilkan milik sendiri
                             return item.employee_name === userName;
                           })
                           .slice(0, 5)
@@ -278,7 +274,6 @@ const Absensi = () => {
             )}
         </div>
 
-        {/* AREA MONITORING PEMILIK (ADMIN ONLY) */}
         {userRole === 'Admin' && (
           <>
             <div style={{ borderTop: '2px dashed #cbd5e1', margin: '40px 0', position: 'relative' }}>

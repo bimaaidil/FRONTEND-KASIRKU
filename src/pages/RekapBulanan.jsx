@@ -1,4 +1,3 @@
-// src/pages/RekapBulanan.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar'; 
@@ -6,32 +5,22 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const RekapBulanan = () => {
   const navigate = useNavigate();
-  const userName = localStorage.getItem('userName') || 'User';
 
-  // --- STATE ---
   const [selectedMonth, setSelectedMonth] = useState('');
   const [showReport, setShowReport] = useState(false);
-  const [dataBulanan, setDataBulanan] = useState([]); // State untuk menampung hasil filter
+  const [dataBulanan, setDataBulanan] = useState([]); 
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; 
 
-  // --- HANDLER TAMPILKAN ---
   const handleTampilkan = () => {
     if (selectedMonth === '') {
         alert("Silakan pilih bulan terlebih dahulu!");
         return;
     }
-
-    // 1. Ambil semua riwayat transaksi dari localStorage
     const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
-
-    // 2. Filter data berdasarkan bulan (mencocokkan kolom 'date' atau 'month')
-    // Kita filter dengan mengecek apakah string tanggal mengandung nama bulan atau menggunakan objek Date
     const filtered = allHistory.filter(item => {
-        // Asumsi di Transaksi.jsx kita menyimpan month: 'April'
-        // Jika Bima mengikuti kode Transaksi.jsx yang saya berikan sebelumnya, filternya seperti ini:
-        const itemMonth = item.date.split('/')[1]; // Mengambil '04' dari '18/04/2026'
+        const itemMonth = item.date.split('/')[1]; 
         const monthsMap = {
             'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
             'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
@@ -50,23 +39,17 @@ const RekapBulanan = () => {
       setShowReport(false); 
   };
 
-  // Logic Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = showReport ? dataBulanan.slice(indexOfFirstItem, indexOfLastItem) : [];
   const totalPages = Math.ceil(dataBulanan.length / itemsPerPage);
 
-  // Hitung Total Pendapatan dari data yang sudah difilter
   const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + curr.subtotal, 0);
-
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
     mainContent: { marginLeft: '260px', flex: 1, padding: '30px 50px' },
-    headerUser: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '10px' },
-    userProfile: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' },
-    userIcon: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb' },
     pageTitle: { fontSize: '20px', fontWeight: 'bold', marginBottom: '25px', color: '#1f2937' },
     filterContainer: { display: 'flex', gap: '12px', marginBottom: '25px', alignItems: 'center' },
     selectInput: { padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', minWidth: '200px', outline: 'none' },
@@ -92,13 +75,6 @@ const RekapBulanan = () => {
     <div style={styles.container}>
       <Sidebar />
       <div style={styles.mainContent}>
-        <div style={styles.headerUser}>
-            <div style={styles.userProfile}>
-                <span>{userName}</span>
-                <div style={styles.userIcon}>👤</div>
-            </div>
-        </div>
-
         <h2 style={styles.pageTitle}>Data Penjualan Bulanan</h2>
 
         <div style={styles.filterContainer}>

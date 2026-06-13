@@ -6,11 +6,11 @@ import Sidebar from '../components/Sidebar';
 // --- 1. IMPORT SERVICE API & FIREBASE ---
 import { getPredictionData } from '../services/ai_api';
 import { db } from '../config/firebase'; 
-import { collection, getDocs, query, where, doc, updateDoc, increment } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, increment, getDoc } from "firebase/firestore";
 
 import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck } from 'lucide-react';
+import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
 const PrediksiStok = () => {
   const navigate = useNavigate();
@@ -34,9 +34,44 @@ const PrediksiStok = () => {
   const [selectedDate, setSelectedDate] = useState(getTomorrowDate());
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [weatherData, setWeatherData] = useState({ condition: '-', temp: 0, insight: 'Memuat data...' });
+  const [weatherData, setWeatherData] = useState({ condition: '-', temp: 0, humidity: 0, insight: 'Memuat data...' });
   const [chartData, setChartData] = useState([]);
   const [recommendationData, setRecommendationData] = useState([]);
+
+  // --- REVISI: STATE BARU UNTUK REKOMENDASI BAHAN PELENGKAP (HANYA GULA) ---
+  const [bahanPelengkapData, setBahanPelengkapData] = useState([]);
+
+  // --- REVISI: FUNGSI HITUNG KEBUTUHAN BAHAN PELENGKAP BERDASARKAN PREDIKSI AI ---
+  const kalkulasiBahanPelengkap = async (predictions) => {
+    let butuhGula = 0;
+
+    // Hanya hitung akumulasi gram Gula saja dari angka prediksi porsi buah AI Bi-LSTM
+    predictions.forEach(item => {
+      const nama = item.name.toLowerCase();
+      const qty = item.predicted || 0;
+
+      // Gula Cair (Resep Normal Varisha Jus)
+      if (['belimbing', 'jeruk', 'terong belanda', 'timun'].includes(nama)) {
+        butuhGula += 120 * qty; // 3 sendok = 120 gram
+      } else {
+        butuhGula += 100 * qty; // 2.5 sendok = 100 gram
+      }
+    });
+
+    // Ambil data sisa stok real-time Gula saat ini dari koleksi 'bahan_pelengkap' di Firestore
+    let stokGula = 0;
+    try {
+      const gulaSnap = await getDoc(doc(db, "bahan_pelengkap", "gula"));
+      if (gulaSnap.exists()) stokGula = gulaSnap.data().stok_sekarang || 0;
+    } catch (e) {
+      console.error("Gagal mengambil stok gula:", e);
+    }
+
+    // Set data tabel eksklusif hanya untuk Gula Cair saja
+    setBahanPelengkapData([
+      { id: 'gula', name: 'Gula Cair', currentStock: stokGula, predicted: butuhGula, unit: 'gram', isCair: true }
+    ]);
+  };
 
   // --- LOAD DATA ---
   const fetchAllData = async () => {
@@ -47,9 +82,12 @@ const PrediksiStok = () => {
         setWeatherData(result.weather);
         setChartData(result.chart);
         setRecommendationData(result.recommendations);
+        
+        // Jalankan fungsi hitung bahan pelengkap (Gula) setelah prediksi porsi didapatkan
+        await kalkulasiBahanPelengkap(result.recommendations);
       }
     } catch (error) {
-      console.error("Gagal prediksi:", error);
+      console.error("Gagal memuat prediksi Bi-LSTM:", error);
     } finally {
       setLoading(false);
     }
@@ -59,13 +97,37 @@ const PrediksiStok = () => {
     fetchAllData();
   }, [selectedDate]);
 
-  // --- FUNGSI 1: BELI SATUAN ---
+  // --- FUNGSI UPDATE STOK BAHAN PELENGKAP (GULA) ---
+  const handleBeliBahanPelengkap = async (docId, name, amount, unit) => {
+    const confirmMessage = 
+      `KONFIRMASI BELANJA BAHAN PELENGKAP\n\n` +
+      `Bahan: ${name}\n` +
+      `Jumlah Saran: ${amount} ${unit}\n\n` +
+      `Apakah Anda membeli sesuai saran sistem? Jika YA, stok bahan di database akan bertambah.`;
+
+    if (window.confirm(confirmMessage)) {
+      setIsUpdating(true);
+      try {
+        const bahanRef = doc(db, "bahan_pelengkap", docId);
+        await updateDoc(bahanRef, { stok_sekarang: increment(amount) });
+        alert(`✅ Berhasil! Stok ${name} telah diperbarui.`);
+        fetchAllData();
+      } catch (error) {
+        console.error(error);
+        alert("Gagal memperbarui stok bahan pelengkap.");
+      } finally {
+        setIsUpdating(false);
+      }
+    }
+  };
+
+  // --- FUNGSI 1: BELI SATUAN BUAH ---
   const handleKonfirmasiBelanja = async (itemName, amount, unit) => {
     const confirmMessage = 
       `KONFIRMASI BELANJA\n\n` +
       `Bahan: ${itemName}\n` +
       `Jumlah Saran: ${amount} ${unit}\n\n` +
-      `Apakah Anda membeli sesuai saran sistem? Jika YA, stok akan otomatis bertambah.`;
+      `Apakah Anda membeli sesuai saran sistem? Jika YA, stok di database akan otomatis bertambah.`;
     
     if (window.confirm(confirmMessage)) {
       setIsUpdating(true);
@@ -79,9 +141,10 @@ const PrediksiStok = () => {
           alert(`✅ Berhasil! Stok ${itemName} telah diperbarui.`);
           fetchAllData(); 
         } else {
-          alert(`❌ Produk "${itemName}" tidak ditemukan.`);
+          alert(`❌ Produk "${itemName}" tidak ditemukan di database.`);
         }
       } catch (error) {
+        console.error(error);
         alert("Gagal memperbarui stok.");
       } finally {
         setIsUpdating(false);
@@ -89,20 +152,20 @@ const PrediksiStok = () => {
     }
   };
 
-  // --- FUNGSI 2: BELI SEMUA (MASSAL) ---
+  // --- FUNGSI 2: BELI SEMUA (MASSAL BUAH) ---
   const handleBeliSemua = async () => {
     const itemsToBuy = recommendationData.filter(item => item.currentStock < item.predicted);
     
     if (itemsToBuy.length === 0) {
-      alert("Semua stok sudah aman.");
+      alert("Semua stok sudah aman (mencukupi hasil prediksi).");
       return;
     }
 
     const confirmMessage = 
       `KONFIRMASI BELANJA MASSAL\n\n` +
-      `Terdapat ${itemsToBuy.length} produk yang perlu dibeli.\n` +
-      `Apakah Anda sudah membeli SEMUA buah/bahan sesuai saran Bi-LSTM?\n\n` +
-      `Sistem akan memperbarui stok 25+ produk secara otomatis.`;
+      `Terdapat ${itemsToBuy.length} produk yang perlu ditambah stoknya.\n` +
+      `Apakah Anda sudah membeli SEMUA bahan sesuai saran Bi-LSTM?\n\n` +
+      `Sistem akan memperbarui seluruh stok produk secara otomatis.`;
 
     if (window.confirm(confirmMessage)) {
       setIsUpdating(true);
@@ -121,6 +184,7 @@ const PrediksiStok = () => {
         alert(`✅ Sukses! Stok ${itemsToBuy.length} produk berhasil diperbarui secara massal.`);
         fetchAllData();
       } catch (error) {
+        console.error(error);
         alert("Terjadi kesalahan pada update massal.");
       } finally {
         setIsUpdating(false);
@@ -189,7 +253,7 @@ const PrediksiStok = () => {
           <div style={styles.infoBadge}>
              <FaInfoCircle size={16} />
              <div>
-                <b>Logika AI:</b> Menggunakan data penjualan <b>Hari Ini ({formatDateIndo(getTodayDate())})</b>
+                <b>Analisis AI:</b> Berdasarkan data penjualan 7 hari terakhir.
              </div>
           </div>
         </div>
@@ -197,7 +261,7 @@ const PrediksiStok = () => {
         {loading ? (
              <div style={{height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#6b7280'}}>
                 <Loader className="animate-spin" size={40} color="#3b82f6" />
-                <p style={{marginTop: '15px'}}>Menganalisis pola penjualan & cuaca...</p>
+                <p style={{marginTop: '15px'}}>Menganalisis pola penjualan & memproses Bi-LSTM...</p>
             </div>
         ) : (
         <>
@@ -205,13 +269,22 @@ const PrediksiStok = () => {
                 <div style={styles.weatherCard}>
                     <div style={{position: 'relative', zIndex: 1}}>
                         <p style={{fontSize: '13px', color: '#dbeafe', marginBottom: '4px'}}>Ramalan Cuaca Besok</p>
-                        <h2 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '8px'}}>{weatherData.temp}°C</h2>
+                        <div style={{display: 'flex', alignItems: 'baseline', gap: '10px'}}>
+                            <h2 style={{fontSize: '36px', fontWeight: 'bold', marginBottom: '8px'}}>{weatherData.temp}°C</h2>
+                            <span style={{fontSize: '16px', color: '#dbeafe'}}>| Hum: {weatherData.humidity !== undefined ? weatherData.humidity : '--'}%</span>
+                        </div>
                         <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px'}}>
-                            <Sun color="#fde047" size={24} />
+                            {weatherData.condition.includes("Hujan") && weatherData.temp > 28 ? (
+                                <CloudRainWind color="#fde047" size={24} /> 
+                            ) : (
+                                <Sun color="#fde047" size={24} />
+                            )}
                             <span style={{fontSize: '18px', fontWeight: '500'}}>{weatherData.condition}</span>
                         </div>
                         <div style={{backgroundColor: 'rgba(255,255,255,0.2)', padding: '12px', borderRadius: '8px', fontSize: '12px', lineHeight: '1.5'}}>
-                            🤖 <b>AI Insight:</b> {weatherData.insight}
+                            🤖 <b>AI Insight:</b> {weatherData.temp > 28 && weatherData.condition.includes("Hujan") 
+                                ? "Waspada hujan panas/pengap. Penjualan minuman dingin biasanya tetap tinggi karena kelembapan udara." 
+                                : weatherData.insight}
                         </div>
                     </div>
                     <Sun size={100} style={{position: 'absolute', right: '-20px', top: '-20px', color: 'rgba(255,255,255,0.15)'}} />
@@ -236,12 +309,11 @@ const PrediksiStok = () => {
                 </div>
             </div>
 
-            {/* TABEL REKOMENDASI */}
-            <div style={{...styles.card, padding: 0, overflow: 'hidden'}}>
+            {/* TABEL 1: REKOMENDASI BELANJA BUAH UTAMA (HASIL AI) */}
+            <div style={{...styles.card, padding: 0, overflow: 'hidden', marginBottom: '30px'}}>
                 <div style={{padding: '20px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#1f2937'}}>Rekomendasi Belanja</h3>
+                    <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#1f2937'}}>Rekomendasi Belanja Buah Utama</h3>
                     
-                    {/* TOMBOL BELI SEMUA */}
                     <button 
                       onClick={handleBeliSemua} 
                       disabled={isUpdating}
@@ -251,14 +323,14 @@ const PrediksiStok = () => {
                       }}
                     >
                       <PackageCheck size={18} />
-                      {isUpdating ? 'Memproses...' : 'Beli Semua Sesuai Saran'}
+                      {isUpdating ? 'Memproses Database...' : 'Beli Semua Sesuai Saran'}
                     </button>
                 </div>
 
                 <table style={{width: '100%', borderCollapse: 'collapse'}}>
                     <thead>
                         <tr style={{backgroundColor: '#f9fafb'}}>
-                            <th style={styles.tableHeader}>Bahan Baku</th>
+                            <th style={styles.tableHeader}>Nama Buah</th>
                             <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Sistem</th>
                             <th style={{...styles.tableHeader, textAlign: 'center'}}>Target Bi-LSTM</th>
                             <th style={styles.tableHeader}>Aksi</th>
@@ -298,6 +370,71 @@ const PrediksiStok = () => {
                                                 fontSize: '11px', fontWeight: 'bold'
                                             }}>
                                                 {icon} AMAN
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* TABEL 2: REKOMENDASI PEMBELIAN STOK BAHAN PELENGKAP (EKSKLUSIF GULA) */}
+            <div style={{...styles.card, padding: 0, overflow: 'hidden'}}>
+                <div style={{padding: '20px', borderBottom: '1px solid #f3f4f6'}}>
+                    <h3 style={{fontSize: '16px', fontWeight: 'bold', color: '#154784'}}>Rekomendasi Belanja Bahan Pelengkap Besok</h3>
+                    <p style={{margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280'}}>Kalkulasi kebutuhan porsi resep otomatis berdasarkan matriks target penjualan AI Bi-LSTM.</p>
+                </div>
+
+                <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                    <thead>
+                        <tr style={{backgroundColor: '#f8fafc'}}>
+                            <th style={styles.tableHeader}>Bahan Baku Pelengkap</th>
+                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Stok Gudang</th>
+                            <th style={{...styles.tableHeader, textAlign: 'center'}}>Kebutuhan Porsi</th>
+                            <th style={styles.tableHeader}>Rekomendasi Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {bahanPelengkapData.map((item) => {
+                            const { status, amount, color, textColor, icon } = getActionStatus(item.currentStock, item.predicted);
+                            
+                            const displayCurrent = `${(item.currentStock / 1000).toFixed(2)} kg`;
+                            const displayNeeded = `${(item.predicted / 1000).toFixed(2)} kg`;
+                            const displayAmount = `${(amount / 1000).toFixed(2)} kg`;
+
+                            return (
+                                <tr key={item.id}>
+                                    <td style={{...styles.tableCell, fontWeight: '600', color: '#1f2937'}}>{item.name}</td>
+                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                        {displayCurrent}
+                                    </td>
+                                    <td style={{...styles.tableCell, textAlign: 'center'}}>
+                                        <span style={{color: '#154784', fontWeight: 'bold'}}>{displayNeeded}</span>
+                                    </td>
+                                    <td style={styles.tableCell}>
+                                        {status === 'BELI' ? (
+                                            <button 
+                                                onClick={() => handleBeliBahanPelengkap(item.id, item.name, amount, item.unit)}
+                                                disabled={isUpdating}
+                                                style={{
+                                                    ...styles.btnBeli,
+                                                    backgroundColor: color, 
+                                                    color: textColor,
+                                                    opacity: isUpdating ? 0.6 : 1
+                                                }}
+                                            >
+                                                <ShoppingCart size={14} style={{marginRight: 6}} />
+                                                BELI SEBANYAK {displayAmount}
+                                            </button>
+                                        ) : (
+                                            <div style={{
+                                                display: 'inline-flex', alignItems: 'center', padding: '6px 14px', 
+                                                borderRadius: '99px', backgroundColor: color, color: textColor, 
+                                                fontSize: '11px', fontWeight: 'bold'
+                                            }}>
+                                                {icon} STOK CUKUP
                                             </div>
                                         )}
                                     </td>

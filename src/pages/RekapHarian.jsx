@@ -4,25 +4,18 @@ import Sidebar from '../components/Sidebar';
 
 const RekapHarian = () => {
   const navigate = useNavigate();
-  const userName = localStorage.getItem('userName') || 'User';
 
   const [selectedDay, setSelectedDay] = useState(''); 
   const [showReport, setShowReport] = useState(false);
   const [currentData, setCurrentData] = useState([]);
 
-  // --- HANDLER TAMPILKAN ---
   const handleTampilkan = () => {
     if (selectedDay === '') {
         alert("Silakan pilih hari terlebih dahulu!");
         return;
     }
-    
-    // Ambil data asli dari localStorage
     const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
-    
-    // Filter berdasarkan hari yang dipilih di dropdown
     const filtered = allHistory.filter(item => item.day === selectedDay);
-    
     setCurrentData(filtered);
     setShowReport(true); 
   };
@@ -38,9 +31,6 @@ const RekapHarian = () => {
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
     mainContent: { marginLeft: '260px', flex: 1, padding: '30px 50px' },
-    headerUser: { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '10px' },
-    userProfile: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: '600' },
-    userIcon: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e5e7eb' },
     pageTitle: { fontSize: '20px', fontWeight: 'bold', marginBottom: '25px', color: '#1f2937' },
     filterContainer: { display: 'flex', gap: '12px', marginBottom: '25px', alignItems: 'center' },
     selectInput: { padding: '10px 15px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', minWidth: '180px', outline: 'none' },
@@ -57,13 +47,6 @@ const RekapHarian = () => {
     <div style={styles.container}>
       <Sidebar />
       <div style={styles.mainContent}>
-        <div style={styles.headerUser}>
-            <div style={styles.userProfile}>
-                <span>{userName}</span>
-                <div style={styles.userIcon}>👤</div>
-            </div>
-        </div>
-
         <h2 style={styles.pageTitle}>Data Penjualan Harian</h2>
 
         <div style={styles.filterContainer}>

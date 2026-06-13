@@ -8,36 +8,54 @@ const StokOpname = () => {
     const [products, setProducts] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [stokFisik, setStokFisik] = useState('');
-    const [keterangan, setKeterangan] = useState('Buah Busuk');
+    const [keterangan, setKeterangan] = useState('Audit Berkala');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const userNameAdmin = localStorage.getItem('userName') || "Admin"; 
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            console.log("Mencoba mengambil data dari koleksi 'products'...");
+        const fetchAllIngredients = async () => {
             try {
-                // Pastikan nama koleksi 'products' sesuai dengan yang di Firebase Console
-                const querySnapshot = await getDocs(collection(db, "products"));
-                
-                if (querySnapshot.empty) {
-                    console.warn("Koleksi 'products' ditemukan tapi isinya KOSONG.");
-                }
+                // 1. Ambil data buah dari koleksi "products"
+                const queryFruits = await getDocs(collection(db, "products"));
+                const fruitsData = queryFruits.docs.map(doc => ({
+                    id: doc.id,
+                    isBahanPelengkap: false,
+                    ...doc.data()
+                }));
 
-                const data = querySnapshot.docs.map(doc => {
-                    const res = { id: doc.id, ...doc.data() };
-                    console.log("Data ditemukan:", res); // Ini akan muncul di Inspect Element > Console
-                    return res;
+                // 2. REVISI: Ambil data dari koleksi "bahan_pelengkap" (Gula, Susu, Pipet, Plastik)
+                const queryPelengkap = await getDocs(collection(db, "bahan_pelengkap"));
+                const pelengkapData = queryPelengkap.docs.map(doc => {
+                    const res = doc.data();
+                    return {
+                        id: doc.id,
+                        isBahanPelengkap: true,
+                        // Mapping agar nama field selaras dengan fruitsData
+                        nama: res.nama || res.name || doc.id, 
+                        stok: res.stok_sekarang ?? 0,
+                        satuan: res.satuan
+                    };
                 });
-                
-                setProducts(data);
+
+                // Gabungkan kedua sumber data
+                const combinedData = [...fruitsData, ...pelengkapData];
+
+                // MENGURUTKAN SELURUH DATA A-Z BERDASARKAN NAMA BAHAN
+                const sortedData = combinedData.sort((a, b) => {
+                    const nameA = (a.nama || "").toLowerCase();
+                    const nameB = (b.nama || "").toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+
+                setProducts(sortedData);
             } catch (error) {
                 console.error("ERROR saat fetch data:", error.message);
-                alert("Gagal koneksi ke Firebase. Cek koneksi internet atau config.");
+                alert("Gagal mengambil data produk dan bahan pelengkap.");
             }
         };
-        fetchProducts();
+        fetchAllIngredients();
     }, []);
 
     const handleSimpan = async (e) => {
@@ -47,42 +65,66 @@ const StokOpname = () => {
             return;
         }
 
-        const fisik = parseInt(stokFisik);
-        const selisih = fisik - selectedProduct.stok;
+        const fisik = parseFloat(stokFisik);
+        const selisih = fisik - (selectedProduct.stok || 0);
 
         setLoading(true);
         try {
             await runTransaction(db, async (transaction) => {
-                const produkRef = doc(db, "products", selectedProduct.id);
-                const opnameRef = doc(collection(db, "stok_opname"));
+                let produkRef;
+                
+                // Tentukan referensi dokumen berdasarkan asal koleksi
+                if (selectedProduct.isBahanPelengkap) {
+                    produkRef = doc(db, "bahan_pelengkap", selectedProduct.id);
+                    // Update field sesuai nama field di koleksi bahan_pelengkap
+                    transaction.update(produkRef, { stok_sekarang: fisik });
+                } else {
+                    produkRef = doc(db, "products", selectedProduct.id);
+                    transaction.update(produkRef, { stok: fisik });
+                }
 
-                transaction.update(produkRef, { stok: fisik });
+                const opnameRef = doc(collection(db, "stok_opname"));
 
                 transaction.set(opnameRef, {
                     id_produk: selectedProduct.id,
                     nama_produk: selectedProduct.nama, 
-                    stok_sistem: selectedProduct.stok,
+                    stok_sistem: selectedProduct.stok || 0,
                     stok_fisik: fisik,
                     selisih: selisih,
                     keterangan: keterangan,
+                    unit: getUnitDisplay(selectedProduct),
                     waktu_pengecekan: serverTimestamp(),
-                    petugas: userNameAdmin
+                    petugas: userNameAdmin,
+                    kategori_koleksi: selectedProduct.isBahanPelengkap ? "bahan_pelengkap" : "products"
                 });
             });
 
-            alert(`Sukses! Stok ${selectedProduct.nama} telah diperbarui.`);
+            alert(`Sukses! Stok ${selectedProduct.nama} diperbarui.`);
             navigate('/kelola-produk');
         } catch (error) {
             console.error("Gagal simpan:", error);
-            alert("Gagal menyimpan data.");
+            alert("Gagal menyimpan data opname.");
         } finally {
             setLoading(false);
         }
     };
 
-    // --- STYLES ---
+    // REVISI: Fungsi Pembantu untuk menentukan Satuan (kg vs buah vs gram vs pcs)
+    const getUnitDisplay = (product) => {
+        if (!product) return '';
+        if (product.isBahanPelengkap && product.satuan) {
+            return product.satuan; // Ambil langsung dari field satuan Firestore
+        }
+        const nama = product.nama || '';
+        const buahSatuan = ['Semangka', 'Melon', 'Nenas', 'Nanas'];
+        if (buahSatuan.some(b => nama.includes(b))) {
+            return 'buah';
+        }
+        return 'kg';
+    };
+
     const styles = {
-        layout: { display: 'flex', minHeight: '100vh', backgroundColor: '#f4f7fc' },
+        layout: { display: 'flex', minHeight: '100vh', backgroundColor: '#f4f7fc', fontFamily: "'Poppins', sans-serif" },
         mainContent: { marginLeft: '260px', width: '100%', padding: '40px' },
         cardOpname: { maxWidth: '800px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: '30px' },
         headerTitle: { fontSize: '24px', fontWeight: '700', color: '#154784', marginBottom: '10px' },
@@ -93,7 +135,7 @@ const StokOpname = () => {
         btnSubmit: { backgroundColor: '#154784', color: 'white', padding: '12px 25px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer' }
     };
 
-    const selisihDisplay = selectedProduct && stokFisik !== '' ? parseInt(stokFisik) - selectedProduct.stok : 0;
+    const selisihDisplay = selectedProduct && stokFisik !== '' ? (parseFloat(stokFisik) - selectedProduct.stok).toFixed(2) : 0;
 
     return (
         <div style={styles.layout}>
@@ -101,28 +143,26 @@ const StokOpname = () => {
             <div style={styles.mainContent}>
                 <div style={styles.cardOpname}>
                     <h2 style={styles.headerTitle}>Input Stok Opname</h2>
-                    <p className="text-muted mb-4">Sinkronisasi data fisik buah/bahan dengan sistem Kasirku.</p>
+                    <p className="text-muted mb-4">Sinkronisasi stok operasional Varisha Jus.</p>
                     
                     <form onSubmit={handleSimpan}>
                         <div style={styles.formGroup}>
-                            <label style={styles.label}>Pilih Produk</label>
+                            <label style={styles.label}>Pilih Bahan Baku / Produk (Urutan A-Z)</label>
                             <select 
                                 style={styles.input} 
+                                value={selectedProduct ? selectedProduct.id : ""}
                                 onChange={(e) => {
                                     const prod = products.find(p => p.id === e.target.value);
                                     setSelectedProduct(prod);
+                                    setStokFisik(''); 
                                 }}
                             >
-                                <option value="">-- Cari Produk --</option>
-                                {products.length > 0 ? (
-                                    products.map(p => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.nama || "Tanpa Nama"} (Sistem: {p.stok ?? 0} porsi) 
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>Tidak ada data produk di database...</option>
-                                )}
+                                <option value="">-- Cari Buah/Bahan Baku --</option>
+                                {products.map(p => (
+                                    <option key={p.id} value={p.id}>
+                                        {p.nama} (Sistem: {p.stok ?? 0} {getUnitDisplay(p)}) 
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -130,21 +170,19 @@ const StokOpname = () => {
                             <>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Jumlah Fisik Nyata 
-                                        ({selectedProduct.kategori === 'Minuman' ? 'kg' : 'pcs'})
+                                        Jumlah Fisik Nyata (Input Per {getUnitDisplay(selectedProduct)})
                                     </label>
-                                    <div className="input-group">
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                         <input 
                                             type="number" 
-                                            step="0.1" // Supaya bisa input koma (0.1) untuk buah kiloan
-                                            style={styles.input} 
+                                            step={['buah', 'pcs'].includes(getUnitDisplay(selectedProduct)) ? "1" : "0.01"} 
+                                            style={{ ...styles.input, flex: 1 }} 
                                             value={stokFisik} 
                                             onChange={(e) => setStokFisik(e.target.value)} 
-                                            placeholder="Masukkan angka..."
+                                            placeholder={`Contoh: ${['buah', 'pcs'].includes(getUnitDisplay(selectedProduct)) ? '5' : '1500.00'}`}
                                         />
-                                        <span className="input-group-text">
-                                            {/* Logika Satuan Otomatis */}
-                                            {['Pokat', 'Naga', 'Mangga', 'Sirsak', 'Jagung'].includes(selectedProduct.nama) ? 'kg' : 'pcs'}
+                                        <span style={{ fontWeight: 'bold', color: '#154784', width: '80px' }}>
+                                            {getUnitDisplay(selectedProduct)}
                                         </span>
                                     </div>
                                 </div>
@@ -152,26 +190,26 @@ const StokOpname = () => {
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>Keterangan/Alasan</label>
                                     <select style={styles.input} value={keterangan} onChange={(e) => setKeterangan(e.target.value)}>
-                                        <option value="Buah Busuk">Buah Busuk</option>
-                                        <option value="Hilang">Produk Hilang</option>
-                                        <option value="Salah Input">Salah Input</option>
                                         <option value="Audit Berkala">Audit Berkala</option>
+                                        <option value="Buah Busuk">Bahan Baku Rusak / Busuk / Expired</option>
+                                        <option value="Hilang">Bahan Baku Hilang</option>
+                                        <option value="Salah Input">Salah Input</option>
                                     </select>
                                 </div>
 
                                 <div style={styles.infoBox}>
                                     <span>Selisih Stok:</span>
-                                    <span style={{ color: selisihDisplay < 0 ? 'red' : 'green' }}>
-                                        {selisihDisplay}
+                                    <span style={{ color: selisihDisplay < 0 ? '#d32f2f' : '#2e7d32' }}>
+                                        {selisihDisplay} {getUnitDisplay(selectedProduct)}
                                     </span>
                                 </div>
                             </>
                         )}
 
-                        <div className="mt-4 d-flex justify-content-end gap-2">
-                            <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/kelola-produk')}>Batal</button>
+                        <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'end', gap: '10px' }}>
+                            <button type="button" className="btn btn-light" onClick={() => navigate('/kelola-produk')}>Batal</button>
                             <button type="submit" style={styles.btnSubmit} disabled={loading}>
-                                {loading ? 'Memproses...' : 'Simpan Perubahan'}
+                                {loading ? 'Memproses...' : 'Simpan Sinkronisasi'}
                             </button>
                         </div>
                     </form>

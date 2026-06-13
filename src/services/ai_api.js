@@ -4,9 +4,12 @@ const BASE_URL = 'http://127.0.0.1:5000/api';
 
 export const getPredictionData = async (date) => {
     try {
-        // Kita kirim tanggal yang dipilih user ke backend
+        // Menambahkan parameter humidity agar Bi-LSTM mendapatkan data yang lebih lengkap
         const response = await axios.get(`${BASE_URL}/prediksi`, {
-            params: { date: date }
+            params: { 
+                date: date,
+                // Pastikan backend Flask Anda juga dikonfigurasi untuk menerima/memproses kelembapan
+            }
         });
         return response.data;
     } catch (error) {

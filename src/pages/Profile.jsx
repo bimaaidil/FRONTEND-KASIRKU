@@ -1,18 +1,15 @@
-// src/pages/Profile.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar'; // <--- IMPORT SIDEBAR TUNGGAL
+import Sidebar from '../components/Sidebar'; 
 import { FaUserCircle } from 'react-icons/fa';
 
 const Profile = () => {
   const navigate = useNavigate();
 
-  // Ambil data user dari localStorage agar profil dinamis
   const userName = localStorage.getItem('userName') || 'Pengguna';
   const userRole = localStorage.getItem('userRole') || '-';
   const userEmail = localStorage.getItem('userEmail') || '-';
 
-  // --- STYLES ---
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: 'white', fontFamily: "'Poppins', sans-serif" },
     mainContent: { marginLeft: '260px', flex: 1, padding: '30px 60px', backgroundColor: 'white', minHeight: '100vh' },
@@ -33,29 +30,19 @@ const Profile = () => {
 
   return (
     <div style={styles.container}>
-      
-      {/* 1. PANGGIL SIDEBAR TUNGGAL */}
       <Sidebar />
 
-      {/* === MAIN CONTENT === */}
       <div style={styles.mainContent}>
         
-        {/* Header Pojok Kanan */}
         <div style={styles.header}>
           <span style={{ fontWeight: '600', fontSize: '15px' }}>{userName}</span>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1.5px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-             <span style={{ fontSize: '14px' }}>👤</span>
-          </div>
+          <FaUserCircle style={{ fontSize: '32px', color: '#154784' }} />
         </div>
 
         <h2 style={styles.pageTitle}>Profil Saya</h2>
 
-        {/* CARD PROFILE */}
         <div style={styles.card}>
-            
-            {/* --- Bagian Kiri: Form --- */}
             <div style={styles.formSection}>
-                
                 <div style={styles.rowOne}>
                     <div style={{ width: '250px' }}> 
                         <div style={styles.inputGroup}>
@@ -98,20 +85,16 @@ const Profile = () => {
                         <input type="text" style={styles.input} defaultValue="Pekanbaru, Riau" />
                     </div>
                 </div>
-
             </div>
 
-            {/* --- Bagian Kanan: Foto --- */}
             <div style={styles.photoSection}>
                 <FaUserCircle style={styles.userIconLarge} />
                 <button style={styles.btnChangePhoto}>Ubah Foto</button>
             </div>
 
-            {/* Tombol Simpan */}
             <button style={styles.btnSave} onClick={() => alert("Perubahan disimpan!")}>
                 Simpan Perubahan
             </button>
-
         </div>
       </div>
     </div>

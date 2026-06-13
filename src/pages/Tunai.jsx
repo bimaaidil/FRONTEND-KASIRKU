@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
+import { db } from '../config/firebase'; 
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const Tunai = () => {
   const navigate = useNavigate();
@@ -18,52 +20,89 @@ const Tunai = () => {
 
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
-  const handleProcessPayment = (amount) => {
-    if (amount < totalPrice) {
-        alert("Uang yang diterima kurang!");
-        return;
+  const handleProcessPayment = async (amount) => {
+    const numericAmount = parseFloat(amount);
+    if (numericAmount < totalPrice) {
+      alert("Uang yang diterima kurang!");
+      return;
     }
-    const change = amount - totalPrice;
-    
-    // --- LOGIKA BARU: SIMPAN KE REKAP HARIAN ---
+
+    const change = numericAmount - totalPrice;
     const savedCart = JSON.parse(localStorage.getItem('cartData')) || [];
-    const now = new Date();
-    const dayName = now.toLocaleDateString('id-ID', { weekday: 'long' });
-    const fullDate = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    // AMBIL DATA CUACA DARI LOCALSTORAGE
+    const tempWeather = JSON.parse(localStorage.getItem('tempWeatherData')) || { suhu: 0, kondisi: "Tidak Diketahui" };
 
-    const existingHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
+    try {
+      // --- 1. SIMPAN KE API FLASK (UNTUK UPDATE CSV & AI) ---
+      // Baris ini yang akan memicu log di terminal Flask Anda!
+      try {
+        await fetch('http://localhost:5000/api/transaksi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            items: savedCart,
+            total_harga: totalPrice,
+            cuaca: tempWeather.kondisi,
+            suhu: tempWeather.suhu
+          }),
+        });
+        console.log("✅ Data berhasil dikirim ke Flask");
+      } catch (err) {
+        console.error("❌ Gagal mengirim ke Flask (Cek apakah server Flask jalan):", err);
+      }
 
-    // Ubah format keranjang jadi format baris rekap
-    const newRecords = savedCart.map(item => ({
+      // --- 2. SIMPAN KE FIRESTORE ---
+      await addDoc(collection(db, "transactions"), {
+        total_harga: totalPrice,
+        pembayaran: "Tunai",
+        waktu: serverTimestamp(),
+        items: savedCart,
+        suhu: tempWeather.suhu,
+        kondisi_cuaca: tempWeather.kondisi
+      });
+
+      // --- 3. SIMPAN KE HISTORY LOCAL ---
+      const now = new Date();
+      const dayName = now.toLocaleDateString('id-ID', { weekday: 'long' });
+      const fullDate = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const existingHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
+
+      const newRecords = savedCart.map(item => ({
         id: Date.now() + Math.random(),
-        day: dayName,      // Untuk filter hari
-        date: fullDate,    // Untuk kolom tanggal
+        day: dayName,
+        date: fullDate,
         product: item.name,
         qty: item.qty,
         price: item.price,
         subtotal: item.price * item.qty
-    }));
+      }));
 
-    // Simpan history transaksi
-    localStorage.setItem('historyTransaksi', JSON.stringify([...newRecords, ...existingHistory]));
-    // ------------------------------------------
+      localStorage.setItem('historyTransaksi', JSON.stringify([...newRecords, ...existingHistory]));
 
-    // Simpan data transaksi sukses untuk struk
-    const transactionData = {
+      // --- 4. SIMPAN DATA UNTUK STRUK ---
+      const transactionData = {
         totalPrice: totalPrice,
-        receivedAmount: amount,
+        receivedAmount: numericAmount,
         change: change,
-        date: new Date().toLocaleString()
-    };
-    localStorage.setItem('lastTransaction', JSON.stringify(transactionData));
-    
-    // Kosongkan keranjang
-    localStorage.removeItem('cartData');
-    
-    navigate('/transaksi-sukses');
+        date: now.toISOString()
+      };
+      localStorage.setItem('lastTransaction', JSON.stringify(transactionData));
+      
+      // --- 5. CLEANUP ---
+      localStorage.removeItem('cartData');
+      localStorage.removeItem('tempWeatherData');
+      
+      navigate('/transaksi-sukses');
+    } catch (error) {
+      console.error("Error simpan transaksi:", error);
+      alert("Terjadi kesalahan saat menyimpan transaksi.");
+    }
   };
 
-  const handleQuickAmount = (amount) => { setReceivedAmount(amount); };
+  const handleQuickAmount = (amount) => { setReceivedAmount(amount.toString()); };
 
   const quickAmounts = [
     totalPrice, 
@@ -101,7 +140,7 @@ const Tunai = () => {
         <div style={styles.content}>
             <div style={styles.inputGroup}>
                 <input type="number" placeholder="Uang yang diterima" style={styles.input} value={receivedAmount} onChange={(e) => setReceivedAmount(e.target.value)} />
-                <button style={styles.uangPasBtn} onClick={() => setReceivedAmount(totalPrice)}>Uang Pas</button>
+                <button style={styles.uangPasBtn} onClick={() => setReceivedAmount(totalPrice.toString())}>Uang Pas</button>
             </div>
 
             <div style={styles.suggestionSection}>
