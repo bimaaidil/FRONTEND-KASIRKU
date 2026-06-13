@@ -102,12 +102,14 @@ const Absensi = () => {
     fetchRekap();
   }, [bulanPilihan, attendanceList]);
 
+  // Perbaikan Evaluasi Kondisi Tombol Berdasarkan Case Insensitive Data Firestore
   useEffect(() => {
     if (!selectedEmp || !Array.isArray(attendanceList)) { setStatusTombol('MASUK_REGULER'); return; }
     const todayStr = waktuSekarang.toISOString().split('T')[0];
     const myAtts = attendanceList.filter(a => a.employee_id === selectedEmp && a.date === todayStr);
-    const reguler = myAtts.find(a => !a.jenis || a.jenis === 'Reguler');
-    const lembur = myAtts.find(a => a.jenis === 'Lembur');
+    
+    const reguler = myAtts.find(a => !a.jenis || a.jenis.toLowerCase() === 'reguler');
+    const lembur = myAtts.find(a => a.jenis && a.jenis.toLowerCase() === 'lembur');
 
     if (!reguler) {
         setStatusTombol('MASUK_REGULER');
@@ -129,6 +131,7 @@ const Absensi = () => {
     const empObj = employees.find(e => e.id === selectedEmp);
     setLoading(true);
     try {
+        // MENYELARASKAN PARAMETER PAYLOAD MENJADI 'jenis_absen' SESUAI BACKEND FLASK
         await axios.post(`${BASE_SERVER_URL}/api/absensi/clock-in`, {
             employee_id: selectedEmp,
             employee_name: empObj.nama,
@@ -136,13 +139,12 @@ const Absensi = () => {
         });
         alert(jenis === 'Lembur' ? `Semangat Lemburnya, ${empObj.nama}!` : `Selamat bekerja, ${empObj.nama}!`);
         
-        // PERBAIKAN: Jeda 1.5 detik agar database selesai memproses sebelum ditarik ulang
+        // Memberikan jeda delay aman 1 detik untuk konsistensi database Firestore sebelum fetch data baru
         setTimeout(() => {
-            loadData();
-        }, 1500);
-
+          loadData();
+        }, 1000);
     } catch (error) { 
-        alert(error.response?.data?.error || "Gagal absen masuk"); 
+        alert(error.response?.data?.error || "Gagal melakukan absen masuk"); 
         setLoading(false);
     }
   };
@@ -154,13 +156,11 @@ const Absensi = () => {
         await clockOut(selectedEmp);
         alert("Hati-hati di jalan!");
         
-        // PERBAIKAN: Jeda 1.5 detik
         setTimeout(() => {
-            loadData();
-        }, 1500);
-
+          loadData();
+        }, 1000);
     } catch (error) { 
-        alert(error.response?.data?.error || "Gagal absen pulang"); 
+        alert(error.response?.data?.error || "Gagal melakukan absen pulang"); 
         setLoading(false);
     }
   };
@@ -296,8 +296,7 @@ const Absensi = () => {
                         {attendanceList
                           .filter(item => {
                             if (userRole === 'Admin') return true;
-                            // PERBAIKAN: Menghindari error huruf besar/kecil
-                            return item.employee_name?.toLowerCase().trim() === userName?.toLowerCase().trim();
+                            return item.employee_name === userName;
                           })
                           .slice(0, 5)
                           .map((item) => ( 
@@ -305,7 +304,7 @@ const Absensi = () => {
                                 <td style={styles.tableCell}>{item.date}</td>
                                 <td style={{...styles.tableCell, fontWeight: '500'}}>{item.employee_name}</td>
                                 <td style={styles.tableCell}>
-                                    <span style={(!item.jenis || item.jenis === 'Reguler') ? styles.badgeReg : styles.badgeLembur}>
+                                    <span style={(!item.jenis || item.jenis.toLowerCase() === 'reguler') ? styles.badgeReg : styles.badgeLembur}>
                                         {(!item.jenis ? 'REGULER' : item.jenis.toUpperCase())}
                                     </span>
                                 </td>
