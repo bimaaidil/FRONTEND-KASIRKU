@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:5000/api/karyawan';
+const API_URL = 'https://backend-kasirku.vercel.app';
 
 // --- AMBIL SEMUA DATA KARYAWAN ---
 export const getEmployees = async () => {

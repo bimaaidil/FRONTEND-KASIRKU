@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Arahkan ke endpoint produk di Python Flask
-const API_URL = 'http://127.0.0.1:5000/api/produk';
+const API_URL = 'https://backend-kasirku.vercel.app';
 
 // 1. AMBIL SEMUA PRODUK (GET)
 export const getProducts = async () => {
