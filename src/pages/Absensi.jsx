@@ -1,4 +1,3 @@
-// src/pages/Absensi.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; 
@@ -30,20 +29,11 @@ const Absensi = () => {
   const [dataRekap, setDataRekap] = useState([]);
   const [loadingRekap, setLoadingRekap] = useState(false);
 
-  // Deklarasi URL Server Cloud Vercel Terpusat
-  const BASE_SERVER_URL = 'https://backend-kasirku.vercel.app';
-
   const loadData = async () => {
     setLoading(true);
     try {
       const empData = await getEmployees();
-      
-      // Amankan pembacaan data jika response berbentuk bungkus objek
-      const cleanEmpData = Array.isArray(empData) 
-        ? empData 
-        : (empData?.data && Array.isArray(empData.data)) ? empData.data : [];
-
-      const filteredEmps = cleanEmpData.filter(emp => {
+      const filteredEmps = empData.filter(emp => {
         if (userRole === 'Admin') return false; 
         return emp.nama === userName; 
       });
@@ -53,20 +43,12 @@ const Absensi = () => {
       }
     } catch (error) { 
       console.error("Gagal ambil karyawan:", error); 
-      setEmployees([]);
     }
 
     try {
       const attData = await getAttendance();
-      
-      // Amankan penampung riwayat kehadiran harian
-      const cleanAttData = Array.isArray(attData) 
-        ? attData 
-        : (attData?.data && Array.isArray(attData.data)) ? attData.data : [];
-
-      setAttendanceList(cleanAttData);
+      setAttendanceList(attData);
     } catch (error) { 
-      console.error("Gagal ambil riwayat kehadiran:", error);
       setAttendanceList([]); 
     } finally { setLoading(false); }
   };
@@ -75,20 +57,10 @@ const Absensi = () => {
     if (!bulanPilihan || userRole !== 'Admin') return;
     setLoadingRekap(true);
     try {
-      // PERBAIKAN 1: Alihkan rute dari localhost ke server cloud Vercel
-      const response = await axios.get(`${BASE_SERVER_URL}/api/absensi/rekap-bulanan?bulan=${bulanPilihan}`);
-      
-      // PERBAIKAN 2: Proteksi tipe data sebelum disimpan ke state
-      if (response.data && Array.isArray(response.data)) {
-        setDataRekap(response.data);
-      } else if (response.data && Array.isArray(response.data.data)) {
-        setDataRekap(response.data.data);
-      } else {
-        setDataRekap([]);
-      }
+      const response = await axios.get(`https://backend-kasirku.vercel.app`);
+      setDataRekap(response.data);
     } catch (error) {
       console.error("Gagal ambil rekap:", error);
-      setDataRekap([]); // Fallback array kosong agar UI tidak crash .map()
     } finally {
       setLoadingRekap(false);
     }
@@ -105,7 +77,7 @@ const Absensi = () => {
   }, [bulanPilihan, attendanceList]);
 
   useEffect(() => {
-    if (!selectedEmp || !Array.isArray(attendanceList)) { setStatusTombol('MASUK_REGULER'); return; }
+    if (!selectedEmp) { setStatusTombol('MASUK_REGULER'); return; }
     const todayStr = waktuSekarang.toISOString().split('T')[0];
     const myAtts = attendanceList.filter(a => a.employee_id === selectedEmp && a.date === todayStr);
     const reguler = myAtts.find(a => !a.jenis || a.jenis === 'Reguler');
@@ -130,8 +102,7 @@ const Absensi = () => {
     if (!selectedEmp) return alert("Pilih nama Anda dulu!");
     const empObj = employees.find(e => e.id === selectedEmp);
     try {
-        // PERBAIKAN 3: Alihkan rute clock-in dari localhost ke server cloud Vercel
-        await axios.post(`${BASE_SERVER_URL}/api/absensi/clock-in`, {
+        await axios.post('http://127.0.0.1:5000/api/absensi/clock-in', {
             employee_id: selectedEmp,
             employee_name: empObj.nama,
             jenis_absen: jenis 
@@ -313,7 +284,7 @@ const Absensi = () => {
                 <div style={styles.rekapHeader}>
                     <div>
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#1f2937', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <FaChartLine color="#154784"/> Rekapitulasi Kehadiran Bulanan
+                            <FaChartLine color="#154784"/> Rekapitulasi Kehadiran Bulanan
                         </h3>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: '5px 0 0 0' }}>Data kehadiran dan lembur untuk perhitungan gaji.</p>
                     </div>
@@ -332,8 +303,6 @@ const Absensi = () => {
 
                 {loadingRekap ? (
                     <div style={{textAlign: 'center', padding: '30px', color: '#6b7280'}}>Menghitung data...</div>
-                ) : dataRekap.length === 0 ? (
-                    <div style={{textAlign: 'center', padding: '30px', color: '#9ca3af'}}>Tidak ada data rekap pada bulan ini.</div>
                 ) : (
                     <table style={{width: '100%', borderCollapse: 'collapse', marginTop: '10px'}}>
                         <thead>
