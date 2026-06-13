@@ -75,10 +75,8 @@ const Absensi = () => {
     if (!bulanPilihan || userRole !== 'Admin') return;
     setLoadingRekap(true);
     try {
-      // PERBAIKAN 1: Alihkan rute dari localhost ke server cloud Vercel
       const response = await axios.get(`${BASE_SERVER_URL}/api/absensi/rekap-bulanan?bulan=${bulanPilihan}`);
       
-      // PERBAIKAN 2: Proteksi tipe data sebelum disimpan ke state
       if (response.data && Array.isArray(response.data)) {
         setDataRekap(response.data);
       } else if (response.data && Array.isArray(response.data.data)) {
@@ -88,7 +86,7 @@ const Absensi = () => {
       }
     } catch (error) {
       console.error("Gagal ambil rekap:", error);
-      setDataRekap([]); // Fallback array kosong agar UI tidak crash .map()
+      setDataRekap([]); 
     } finally {
       setLoadingRekap(false);
     }
@@ -129,25 +127,42 @@ const Absensi = () => {
   const handleClockIn = async (jenis) => {
     if (!selectedEmp) return alert("Pilih nama Anda dulu!");
     const empObj = employees.find(e => e.id === selectedEmp);
+    setLoading(true);
     try {
-        // PERBAIKAN 3: Alihkan rute clock-in dari localhost ke server cloud Vercel
         await axios.post(`${BASE_SERVER_URL}/api/absensi/clock-in`, {
             employee_id: selectedEmp,
             employee_name: empObj.nama,
             jenis_absen: jenis 
         });
         alert(jenis === 'Lembur' ? `Semangat Lemburnya, ${empObj.nama}!` : `Selamat bekerja, ${empObj.nama}!`);
-        loadData(); 
-    } catch (error) { alert(error.response?.data?.error || "Gagal absen masuk"); }
+        
+        // PERBAIKAN: Jeda 1.5 detik agar database selesai memproses sebelum ditarik ulang
+        setTimeout(() => {
+            loadData();
+        }, 1500);
+
+    } catch (error) { 
+        alert(error.response?.data?.error || "Gagal absen masuk"); 
+        setLoading(false);
+    }
   };
 
   const handleClockOut = async () => {
     if (!selectedEmp) return alert("Pilih nama Anda dulu!");
+    setLoading(true);
     try {
         await clockOut(selectedEmp);
         alert("Hati-hati di jalan!");
-        loadData(); 
-    } catch (error) { alert(error.response?.data?.error || "Gagal absen pulang"); }
+        
+        // PERBAIKAN: Jeda 1.5 detik
+        setTimeout(() => {
+            loadData();
+        }, 1500);
+
+    } catch (error) { 
+        alert(error.response?.data?.error || "Gagal absen pulang"); 
+        setLoading(false);
+    }
   };
 
   const styles = {
@@ -281,7 +296,8 @@ const Absensi = () => {
                         {attendanceList
                           .filter(item => {
                             if (userRole === 'Admin') return true;
-                            return item.employee_name === userName;
+                            // PERBAIKAN: Menghindari error huruf besar/kecil
+                            return item.employee_name?.toLowerCase().trim() === userName?.toLowerCase().trim();
                           })
                           .slice(0, 5)
                           .map((item) => ( 
