@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from '../config/firebase'; 
-import { getEmployees } from '../services/employee_api'; // Ambil data karyawan
+import { getEmployees } from '../services/employee_api'; 
 import logoImg from '../assets/LogoKasir.jpg'; 
 
 const Login = () => {
@@ -19,37 +19,27 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // 1. Login ke Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Ambil data profil dari database untuk cek Role & Status
       const allEmployees = await getEmployees();
       let currentUserData = null;
 
-      // --- PERBAIKAN UTAMA: SISTEM PARSING AMAN UNTUK VERCEL ---
-      // Cek jika data langsung berbentuk Array lurus
       if (Array.isArray(allEmployees)) {
         currentUserData = allEmployees.find(emp => emp.email === user.email);
-      } 
-      // Cek jika berbentuk objek yang membungkus array di dalam key 'data'
-      else if (allEmployees && Array.isArray(allEmployees.data)) {
+      } else if (allEmployees && Array.isArray(allEmployees.data)) {
         currentUserData = allEmployees.data.find(emp => emp.email === user.email);
-      } 
-      // Cek jika berbentuk objek yang membungkus array di dalam key 'karyawan'
-      else if (allEmployees && Array.isArray(allEmployees.karyawan)) {
+      } else if (allEmployees && Array.isArray(allEmployees.karyawan)) {
         currentUserData = allEmployees.karyawan.find(emp => emp.email === user.email);
       }
 
       if (currentUserData) {
-        // 3. Cek apakah akun sudah diverifikasi Admin
         if (currentUserData.status !== 'AKTIF') {
           setError("Akun Anda belum aktif. Silakan hubungi Admin untuk verifikasi.");
           setLoading(false);
           return;
         }
 
-        // 4. Simpan Role dan Nama ke localStorage untuk kebutuhan Sidebar & UI
         localStorage.setItem('userRole', currentUserData.posisi); 
         localStorage.setItem('userName', currentUserData.nama);
 
@@ -72,14 +62,58 @@ const Login = () => {
     }
   };
 
-  // --- CONFIG STYLE ---
-  const commonGradient = 'linear-gradient(110deg, #ffffff 50%, #154784 50.1%)';
-
+  // --- CONFIG STYLE RESPONSIVE ---
+  // Perbaikan: Gradien disesuaikan agar di HP (layar kecil) tidak memotong teks form menjadi kontras gelap-terang
   const styles = {
-    wrapper: { minHeight: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: commonGradient, backgroundAttachment: 'fixed', backgroundSize: 'cover' },
-    card: { maxWidth: '1000px', width: '90%', borderRadius: '20px', border: 'none', background: commonGradient, backgroundAttachment: 'fixed', backgroundSize: 'cover', boxShadow: '0 20px 60px rgba(0,0,0,0.25)', overflow: 'hidden' },
-    input: { borderRadius: '8px', border: 'none', padding: '12px 15px', fontSize: '14px', color: '#333', height: '48px' },
-    button: { backgroundColor: '#427dfc', border: 'none', borderRadius: '8px', padding: '12px', fontWeight: '600', boxShadow: '0 4px 15px rgba(66, 125, 252, 0.4)', height: '48px', color: 'white', cursor: 'pointer' }
+    wrapper: { 
+      minHeight: '100vh', 
+      width: '100%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      backgroundColor: '#154784', // Fallback warna dasar untuk HP
+      background: 'linear-gradient(135deg, #154784 0%, #0d2c54 100%)', // Gradien modern yang ramah di HP & Laptop
+      padding: '20px'
+    },
+    card: { 
+      maxWidth: '950px', 
+      width: '100%', 
+      borderRadius: '20px', 
+      border: 'none', 
+      backgroundColor: '#ffffff',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.3)', 
+      overflow: 'hidden' 
+    },
+    // Form container menggunakan warna gelap seragam agar teks putih terbaca jelas di HP
+    formSection: {
+      backgroundColor: '#154784',
+      padding: '40px 30px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      minHeight: '100%'
+    },
+    input: { 
+      borderRadius: '8px', 
+      border: '1px solid #e5e7eb', 
+      padding: '12px 15px', 
+      fontSize: '14px', 
+      color: '#333', 
+      height: '48px',
+      backgroundColor: '#ffffff'
+    },
+    button: { 
+      backgroundColor: '#427dfc', 
+      border: 'none', 
+      borderRadius: '8px', 
+      padding: '12px', 
+      fontWeight: '600', 
+      boxShadow: '0 4px 15px rgba(66, 125, 252, 0.4)', 
+      height: '48px', 
+      color: 'white', 
+      cursor: 'pointer',
+      marginTop: '10px'
+    }
   };
 
   return (
@@ -87,24 +121,30 @@ const Login = () => {
       <div className="card" style={styles.card}>
         <div className="row g-0">
           
-          {/* BAGIAN KIRI (LOGO) */}
-          <div className="col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center p-5">
+          {/* BAGIAN KIRI (LOGO) - Otomatis tersembunyi di HP, muncul di Laptop (md) */}
+          <div className="col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center p-5" style={{ backgroundColor: '#ffffff' }}>
             <div className="text-center">
-              <img src={logoImg} alt="Kasirku" className="img-fluid mb-3" style={{ width: '150px' }} />
+              <img src={logoImg} alt="Kasirku" className="img-fluid mb-3" style={{ width: '140px', borderRadius: '15px' }} />
               <h2 className="fw-bold m-0" style={{ color: '#154784', fontSize: '32px' }}>Kasirku</h2>
               <p className="text-muted mt-2">Sistem Kasir & Monitoring Karyawan</p>
             </div>
           </div>
 
-          {/* BAGIAN KANAN (FORM) */}
-          <div className="col-md-6 p-5">
-            <div className="ps-md-4 py-3"> 
-              <h3 className="d-md-none text-white fw-bold mb-4">Login</h3> 
+          {/* BAGIAN KANAN (FORM) - col-12 membuatnya melebar penuh dan presisi saat di layar HP */}
+          <div className="col-12 col-md-6" style={styles.formSection}>
+            <div className="w-100"> 
+              <div className="text-center d-md-none mb-4">
+                {/* Munculkan logo kecil di HP agar identitas aplikasi tidak hilang */}
+                <img src={logoImg} alt="Kasirku" className="img-fluid mb-2" style={{ width: '60px', borderRadius: '10px' }} />
+                <h3 className="text-white fw-bold m-0">Kasirku</h3>
+              </div>
               
-              {error && <div className="alert alert-danger py-2 small mb-3" style={{ borderRadius: '8px' }}>{error}</div>}
+              <h3 className="d-none d-md-block text-white fw-bold mb-4">Login</h3> 
+              
+              {error && <div className="alert alert-danger py-2 small mb-3" style={{ borderRadius: '8px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none' }}>{error}</div>}
 
               <form onSubmit={handleLogin}>
-                <div className="mb-4">
+                <div className="mb-3">
                   <label className="text-white fw-bold mb-2 small">Email Address</label>
                   <input 
                     type="email" 
@@ -117,7 +157,7 @@ const Login = () => {
                   />
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-3">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <label className="text-white fw-bold small">Password</label>
                     <Link to="#" className="text-decoration-none small" style={{ color: '#a0c4eb' }}>
@@ -148,13 +188,14 @@ const Login = () => {
               </form>
 
               <div className="mt-4 text-center">
-                <span className="small text-white-50">Belum Punya Akun? </span>
+                <span className="small style={{ color: '#e5e7eb' }}">Belum Punya Akun? </span>
                 <Link to="/register" className="text-decoration-none fw-bold small" style={{ color: '#a0c4eb' }}>
                     Daftar Disini
                 </Link>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
