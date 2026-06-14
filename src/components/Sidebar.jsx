@@ -16,7 +16,8 @@ import {
   FaChartLine,
   FaClipboardCheck,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaQuestionCircle // Tambahan ikon interaktif untuk penanda fitur bantuan adaptif
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -43,6 +44,19 @@ const Sidebar = () => {
   const handleNavigation = (path) => {
     navigate(path);
     if (isMobile) setIsOpen(false); // Otomatis tutup sidebar di HP setelah menu diklik
+  };
+
+  // --- INTEGRASI PEMELIHARAAN ADAPTIF: FUNGSI RESET TUR PANDUAN CEPAT ---
+  const handleTriggerTourGuide = () => {
+    // Memaksa reload state tour guide dengan menghapus penanda memori lokal (jika ada) 
+    // dan langsung mengarahkan dosen ke halaman Prediksi Stok
+    localStorage.removeItem('hasRunPredictionTour');
+    handleNavigation('/prediksi');
+    
+    // Memberikan pemicu event global agar dibaca oleh window listener halaman prediksi
+    setTimeout(() => {
+      window.dispatchEvent(new Event('startPredictionTour'));
+    }, 500);
   };
 
   const handleLogout = async () => {
@@ -113,9 +127,26 @@ const Sidebar = () => {
       boxShadow: '0 4px 10px rgba(0,0,0,0.2)', 
       fontWeight: '600' 
     },
+    // Style khusus komponen adaptif agar dosen penguji tertarik untuk mengklik tombol bantuan
+    adaptiveHelpMenu: {
+      padding: '10px 12px',
+      marginBottom: '4px',
+      borderRadius: '6px',
+      cursor: 'pointer',
+      color: '#fde047', // Memberikan aksen warna kuning cerah penanda fitur baru
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      fontSize: '13px',
+      fontWeight: '600',
+      backgroundColor: 'rgba(253, 224, 71, 0.1)', // Efek kaca transparan kekuningan
+      border: '1px dashed rgba(253, 224, 71, 0.4)',
+      transition: '0.2s',
+      flexShrink: 0
+    },
     divider: { borderBottom: '1px solid rgba(255,255,255,0.1)', margin: '10px 0', flexShrink: 0 },
     userInfo: {
-      marginTop: '30px', 
+      marginTop: 'auto', // Mengubah marginTop statis menjadi auto agar info user kokoh berada di dasar sidebar luar
       padding: '10px',
       backgroundColor: 'rgba(255,255,255,0.05)',
       borderRadius: '8px',
@@ -135,7 +166,6 @@ const Sidebar = () => {
       transition: '0.3s',
       flexShrink: 0
     },
-    // Tombol pemicu hamburger melayang di HP
     toggleBtn: {
       position: 'fixed',
       top: '15px',
@@ -152,7 +182,6 @@ const Sidebar = () => {
       zIndex: 1100,
       boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
     },
-    // Latar belakang gelap transparan saat menu terbuka di HP
     overlay: {
       position: 'fixed',
       top: 0,
@@ -199,11 +228,21 @@ const Sidebar = () => {
 
         <div style={styles.divider}></div>
         <div style={styles.menuSectionTitle}>Fitur Cerdas</div>
+        
         <div 
           style={isActive('/prediksi') ? {...styles.menuItem, ...styles.activeMenu} : styles.menuItem}
           onClick={() => handleNavigation('/prediksi')}
         >
           <FaChartLine size={14} /> <span>Prediksi Stok</span>
+        </div>
+
+        {/* INTEGRASI AKSI PEMELIHARAAN ADAPTIF: MEMASUKKAN MENU RESET TOUR DI BAWAH PREDIKSI STOK */}
+        <div 
+          style={styles.adaptiveHelpMenu}
+          onClick={handleTriggerTourGuide}
+          title="Klik untuk memulai ulang panduan interaktif halaman prediksi AI"
+        >
+          <FaQuestionCircle size={14} /> <span>Panduan Fitur (Tour)</span>
         </div>
 
         {/* KHUSUS ADMIN */}
