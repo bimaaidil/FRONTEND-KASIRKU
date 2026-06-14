@@ -262,9 +262,9 @@ const PrediksiStok = () => {
 
   return (
     <div style={styles.container}>
-      {/* PENATAAN BARU: SUSPENSE BERADA PADA CAKUPAN TERTINGGI STRUKTUR LAYOUT TOUR */}
+      {/* FIX EROR 306: Suspense wajib diletakkan di luar pengondisian dinamis */}
       <React.Suspense fallback={null}>
-        {runTour && typeof JoyrideLazy !== 'undefined' && (
+        {runTour && (
           <JoyrideLazy
             steps={steps}
             run={runTour}
