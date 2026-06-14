@@ -12,10 +12,8 @@ import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
-// --- PERBAIKAN IMPOR JOYRIDE AGAR LOLOS VERCEL & RUNTIME BROWSER ---
-import * as ReactJoyrideNamespace from 'react-joyride';
-const JoyrideComponent = ReactJoyrideNamespace.default?.default || ReactJoyrideNamespace.default || ReactJoyrideNamespace;
-const STATUS = ReactJoyrideNamespace.STATUS || { FINISHED: 'finished', SKIPPED: 'skipped' };
+// --- PERBAIKAN 1: MENGGUNAKAN LAZY LOADING AGAR SINKRON DENGAN BUNDLING VITE ---
+const JoyrideLazy = React.lazy(() => import('react-joyride'));
 
 const PrediksiStok = () => {
   const navigate = useNavigate();
@@ -93,7 +91,6 @@ const PrediksiStok = () => {
       const gulaSnap = await getDoc(doc(db, "bahan_pelengkap", "gula"));
       if (gulaSnap.exists()) stokGula = gulaSnap.data().stok_sekarang || 0;
     } catch (e) {
-      // PERBAIKAN: Mengganti print() menjadi console.error() agar tidak memicu ReferenceError global
       console.error("Gagal mengambil stok gula:", e);
     }
 
@@ -128,6 +125,7 @@ const PrediksiStok = () => {
         setRecommendationData(cleanRecommendations);
         await kalkulasiBahanPelengkap(cleanRecommendations);
         
+        // Aktifkan tour guide setelah semua data terisi
         setRunTour(true);
       }
     } catch (error) {
@@ -228,7 +226,8 @@ const PrediksiStok = () => {
 
   const handleJoyrideCallback = (data) => {
     const { status } = data;
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    // Mencocokkan status penutupan tur menggunakan string murni untuk mencegah kebergantungan objek eksternal
+    if (['finished', 'skipped'].includes(status)) {
       setRunTour(false);
     }
   };
@@ -264,24 +263,26 @@ const PrediksiStok = () => {
 
   return (
     <div style={styles.container}>
-      {/* PERBAIKAN UTAMA: MEMANGGIL KOMPONEN VALID HASIL DESTRUKTURISASI GANDA */}
-      {typeof JoyrideComponent === 'function' || typeof JoyrideComponent === 'object' ? (
-        <JoyrideComponent
-          steps={steps}
-          run={runTour}
-          continuous={true}
-          showSkipButton={true}
-          callback={handleJoyrideCallback}
-          styles={{
-            options: {
-              primaryColor: '#2563eb',
-              textColor: '#374151',
-              fontFamily: 'Poppins, sans-serif',
-              zIndex: 5000
-            }
-          }}
-        />
-      ) : null}
+      {/* PERBAIKAN UTAMA: ME-RENDER LAZY COMPONENT DI DALAM SUSPENSE WRAPPER */}
+      <React.Suspense fallback={null}>
+        {runTour && (
+          <JoyrideLazy
+            steps={steps}
+            run={runTour}
+            continuous={true}
+            showSkipButton={true}
+            callback={handleJoyrideCallback}
+            styles={{
+              options: {
+                primaryColor: '#2563eb',
+                textColor: '#374151',
+                fontFamily: 'Poppins, sans-serif',
+                zIndex: 5000
+              }
+            }}
+          />
+        )}
+      </React.Suspense>
 
       <Sidebar />
 
