@@ -25,6 +25,9 @@ import DetailKas from './pages/DetailKas';
 import PrediksiStok from './pages/PrediksiStok';
 import StokOpname from './pages/StokOpname';
 
+// --- PERBAIKAN: IMPORT HALAMAN PANDUAN FITUR ADAPTIF ---
+import PanduanFitur from './pages/PanduanFitur';
+
 // Komponen Pembantu: Memastikan layar kembali ke atas setiap pindah halaman
 // Ini membantu pemicuan useEffect di halaman Transaksi agar lebih akurat
 function ScrollToTop() {
@@ -61,6 +64,9 @@ function App() {
         {/* Stok & Prediksi */}
         <Route path="/stok-opname" element={<StokOpname />} />
         <Route path="/prediksi" element={<PrediksiStok />} />
+
+        {/* --- PERBAIKAN: ROUTE KHUSUS MENU PANDUAN PEMELIHARAAN ADAPTIF --- */}
+        <Route path="/panduan" element={<PanduanFitur />} />
 
         {/* Point of Sale (POS) System */}
         <Route path="/transaksi" element={<Transaksi />} />

@@ -46,17 +46,9 @@ const Sidebar = () => {
     if (isMobile) setIsOpen(false); // Otomatis tutup sidebar di HP setelah menu diklik
   };
 
-  // --- INTEGRASI PEMELIHARAAN ADAPTIF: FUNGSI RESET TUR PANDUAN CEPAT ---
+  // --- PERBAIKAN MUTLAK: MENGARAHKAN LANGSUNG KE HALAMAN DOKUMENTASI BARU (AMAN 100%) ---
   const handleTriggerTourGuide = () => {
-    // Memaksa reload state tour guide dengan menghapus penanda memori lokal (jika ada) 
-    // dan langsung mengarahkan dosen ke halaman Prediksi Stok
-    localStorage.removeItem('hasRunPredictionTour');
-    handleNavigation('/prediksi');
-    
-    // Memberikan pemicu event global agar dibaca oleh window listener halaman prediksi
-    setTimeout(() => {
-      window.dispatchEvent(new Event('startPredictionTour'));
-    }, 500);
+    handleNavigation('/panduan'); 
   };
 
   const handleLogout = async () => {
@@ -236,11 +228,11 @@ const Sidebar = () => {
           <FaChartLine size={14} /> <span>Prediksi Stok</span>
         </div>
 
-        {/* INTEGRASI AKSI PEMELIHARAAN ADAPTIF: MEMASUKKAN MENU RESET TOUR DI BAWAH PREDIKSI STOK */}
+        {/* MENU PEMELIHARAAN ADAPTIF AKAN MENJADI AKTIF JIKA SEWAKTU-WAKTU DIKLIK */}
         <div 
-          style={styles.adaptiveHelpMenu}
+          style={isActive('/panduan') ? {...styles.adaptiveHelpMenu, backgroundColor: '#427dfc', color: 'white'} : styles.adaptiveHelpMenu}
           onClick={handleTriggerTourGuide}
-          title="Klik untuk memulai ulang panduan interaktif halaman prediksi AI"
+          title="Klik untuk melihat dokumentasi panduan fitur adaptif sistem"
         >
           <FaQuestionCircle size={14} /> <span>Panduan Fitur (Tour)</span>
         </div>
