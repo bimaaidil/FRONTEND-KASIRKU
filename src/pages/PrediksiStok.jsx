@@ -12,6 +12,9 @@ import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
+// --- INTEGRASI PEMELIHARAAN ADAPTIF: IMPORT REACT JOYRIDE ---
+import Joyride, { STATUS } from 'react-joyride';
+
 const PrediksiStok = () => {
   const navigate = useNavigate();
 
@@ -40,6 +43,27 @@ const PrediksiStok = () => {
   // --- STATE RESPONSIVE REAL-TIME ---
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+  // --- STATE CONFIGURASI ONBOARDING TOUR (ADAPTIVE MAINTENANCE) ---
+  const [runTour, setRunTour] = useState(false);
+  const [steps] = useState([
+    {
+      target: '.tour-weather-card',
+      content: 'Bagian ini menampilkan estimasi cuaca esok hari di Pekanbaru beserta AI Insight untuk membantu Anda mempersiapkan potensi fluktuasi penjualan akibat cuaca.',
+      placement: 'bottom',
+      disableBeacon: true,
+    },
+    {
+      target: '.tour-chart-card',
+      content: 'Ini adalah grafik visualisasi tren porsi penjualan harian. Membantu Anda melihat pergerakan naik turunnya transaksi secara komparatif.',
+      placement: 'bottom',
+    },
+    {
+      target: '.tour-btn-beli-semua',
+      content: 'Klik tombol ini untuk memperbarui seluruh stok buah di database secara massal dan otomatis berdasarkan hasil rekomendasi kuantitas jaringan cerdas Bi-LSTM.',
+      placement: 'left',
+    }
+  ]);
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
@@ -67,7 +91,7 @@ const PrediksiStok = () => {
       const gulaSnap = await getDoc(doc(db, "bahan_pelengkap", "gula"));
       if (gulaSnap.exists()) stokGula = gulaSnap.data().stok_sekarang || 0;
     } catch (e) {
-      print("Gagal mengambil stok gula:", e);
+      console.log("Gagal mengambil stok gula:", e);
     }
 
     setBahanPelengkapData([
@@ -100,6 +124,9 @@ const PrediksiStok = () => {
         
         setRecommendationData(cleanRecommendations);
         await kalkulasiBahanPelengkap(cleanRecommendations);
+        
+        // Aktifkan petunjuk interaktif (Onboarding) setelah data sukses dimuat
+        setRunTour(true);
       }
     } catch (error) {
       console.error("Gagal memuat prediksi Bi-LSTM:", error);
@@ -197,41 +224,60 @@ const PrediksiStok = () => {
     return { status: 'AMAN', amount: 0, color: '#dcfce7', textColor: '#16a34a', icon: <CheckCircle size={15} className="me-1" /> };
   };
 
+  const handleJoyrideCallback = (data) => {
+    const { status } = data;
+    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+      setRunTour(false);
+    }
+  };
+
   // --- STYLES DYNAMIC OPTIMIZATION ---
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
-    // PERBAIKAN 1: Margin kiri otomatis menjadi 0px di HP agar konten tidak tergeser keluar layar!
     mainContent: { 
       marginLeft: isMobile ? '0px' : '260px', 
       flex: 1, 
-      padding: isMobile ? '70px 15px 40px 15px' : '30px 40px', // Beri padding atas di HP agar tidak menabrak tombol hamburger
+      padding: isMobile ? '70px 15px 40px 15px' : '30px 40px', 
       backgroundColor: '#F5F6FA',
       transition: 'margin 0.3s ease-in-out',
       width: '100%',
       overflowX: 'hidden'
     },
     header: { display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '15px', marginBottom: '25px' },
-    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0, paddingLeft: isMobile ? '45px' : '0' }, // Beri celah dari tombol toggle di HP
+    pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0, paddingLeft: isMobile ? '45px' : '0' }, 
     card: { backgroundColor: 'white', borderRadius: '12px', padding: isMobile ? '16px' : '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', marginBottom: '24px' },
-    
-    // PERBAIKAN 2: Mengubah sistem grid statis menjadi 1 kolom penuh di HP dan 2 kolom berdampingan di PC
     topLayoutGrid: { 
       display: 'grid', 
       gridTemplateColumns: isMobile ? '1fr' : '1fr 2fr', 
       gap: '20px', 
       marginBottom: '24px' 
     },
-    
     weatherCard: { background: 'linear-gradient(to right, #3b82f6, #2563eb)', borderRadius: '12px', padding: '20px', color: 'white', boxShadow: '0 4px 15px rgba(37, 99, 235, 0.2)', position: 'relative', overflow: 'hidden' },
     tableHeader: { textAlign: 'left', padding: '14px 16px', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' },
     tableCell: { padding: '14px 16px', fontSize: '13.5px', color: '#374151', borderBottom: '1px solid #f9fafb' },
-    infoBadge: { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '10px 14px', rounded: '8px', fontSize: '12.5px', border: '1px solid #bae6fd', width: isMobile ? '100%' : 'auto' },
+    infoBadge: { display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', border: '1px solid #bae6fd', width: isMobile ? '100%' : 'auto' },
     btnBeli: { display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: '99px', fontSize: '11px', fontWeight: 'bold', border: 'none', cursor: 'pointer' },
     btnBeliSemua: { backgroundColor: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }
   };
 
   return (
     <div style={styles.container}>
+      {/* COMPONENT INTERAKTIF TOUR GUIDE */}
+      <Joyride
+        steps={steps}
+        run={runTour}
+        continuous={true}
+        showSkipButton={true}
+        callback={handleJoyrideCallback}
+        styles={{
+          options: {
+            primaryColor: '#2563eb',
+            textColor: '#374151',
+            fontFamily: 'Poppins, sans-serif'
+          }
+        }}
+      />
+
       <Sidebar />
 
       <div style={styles.mainContent}>
@@ -259,7 +305,8 @@ const PrediksiStok = () => {
         <>
             {/* GRID CUACA & GRAFIK TREN ADAPTIF */}
             <div style={styles.topLayoutGrid}>
-                <div style={styles.weatherCard}>
+                {/* TARGET TOUR 1: CLASS "tour-weather-card" */}
+                <div style={styles.weatherCard} className="tour-weather-card">
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         <p className="small text-light opacity-75 m-0 mb-1">Estimasi Cuaca Esok Hari</p>
                         <div className="d-flex align-items-baseline gap-2">
@@ -283,8 +330,8 @@ const PrediksiStok = () => {
                     <Sun size={80} className="position-absolute opacity-15" style={{ right: '-15px', top: '-15px' }} />
                 </div>
 
-                {/* GRAFIK VISUALISASI RECHARTS */}
-                <div style={styles.card}>
+                {/* GRAFIK VISUALISASI RECHARTS - TARGET TOUR 2: CLASS "tour-chart-card" */}
+                <div style={styles.card} className="tour-chart-card">
                     <h3 className="fw-semibold text-secondary mb-3 d-flex align-items-center" style={{ fontSize: '15px' }}>
                         <TrendingUp size={16} className="text-primary me-2" /> Visualisasi Tren Porsi Penjualan
                     </h3>
@@ -302,11 +349,12 @@ const PrediksiStok = () => {
                 </div>
             </div>
 
-            {/* TABEL 1: REKOMENDASI BELANJA BUAH UTAMA (RESPONSIVE SCROLL) */}
+            {/* TABEL 1: REKOMENDASI BELANJA BUAH UTAMA */}
             <div style={{ ...styles.card, padding: 0, overflow: 'hidden', marginBottom: '24px' }}>
                 <div className="p-3 border-bottom border-light d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2.5">
                     <h3 className="fw-bold text-dark m-0" style={{ fontSize: '15px' }}>Rekomendasi Belanja Buah Utama</h3>
-                    <button onClick={handleBeliSemua} disabled={isUpdating} className="w-100 w-sm-auto justify-content-center" style={styles.btnBeliSemua}>
+                    {/* TARGET TOUR 3: CLASS "tour-btn-beli-semua" */}
+                    <button onClick={handleBeliSemua} disabled={isUpdating} className="w-100 w-sm-auto justify-content-center tour-btn-beli-semua" style={styles.btnBeliSemua}>
                       <PackageCheck size={16} />
                       {isUpdating ? 'Memperbarui...' : 'Beli Semua Sesuai AI'}
                     </button>
@@ -358,7 +406,7 @@ const PrediksiStok = () => {
                 </div>
             </div>
 
-            {/* TABEL 2: REKOMENDASI PEMBELIAN BAHAN PELENGKAP GULA (RESPONSIVE SCROLL) */}
+            {/* TABEL 2: REKOMENDASI PEMBELIAN BAHAN PELENGKAP GULA */}
             <div style={{ ...styles.card, padding: 0, overflow: 'hidden' }}>
                 <div className="p-3 border-bottom border-light">
                     <h3 className="fw-bold text-dark m-0" style={{ fontSize: '15px' }}>Rekomendasi Belanja Bahan Pelengkap Besok</h3>
