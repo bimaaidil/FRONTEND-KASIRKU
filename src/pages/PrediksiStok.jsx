@@ -7,14 +7,15 @@ import Sidebar from '../components/Sidebar';
 import { getPredictionData } from '../services/ai_api';
 import { db } from '../config/firebase'; 
 import { collection, getDocs, query, where, doc, updateDoc, increment, getDoc } from "firebase/firestore";
+
 import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
-// --- INTEGRASI PEMELIHARAAN ADAPTIF: IMPORT REACT JOYRIDE ---
-import * as ReactJoyride from 'react-joyride';
-const Joyride = ReactJoyride.default || ReactJoyride;
-const STATUS = ReactJoyride.STATUS;
+// --- PERBAIKAN IMPOR JOYRIDE AGAR LOLOS VERCEL & RUNTIME BROWSER ---
+import * as ReactJoyrideNamespace from 'react-joyride';
+const JoyrideComponent = ReactJoyrideNamespace.default?.default || ReactJoyrideNamespace.default || ReactJoyrideNamespace;
+const STATUS = ReactJoyrideNamespace.STATUS || { FINISHED: 'finished', SKIPPED: 'skipped' };
 
 const PrediksiStok = () => {
   const navigate = useNavigate();
@@ -92,7 +93,8 @@ const PrediksiStok = () => {
       const gulaSnap = await getDoc(doc(db, "bahan_pelengkap", "gula"));
       if (gulaSnap.exists()) stokGula = gulaSnap.data().stok_sekarang || 0;
     } catch (e) {
-      console.log("Gagal mengambil stok gula:", e);
+      // PERBAIKAN: Mengganti print() menjadi console.error() agar tidak memicu ReferenceError global
+      console.error("Gagal mengambil stok gula:", e);
     }
 
     setBahanPelengkapData([
@@ -126,7 +128,6 @@ const PrediksiStok = () => {
         setRecommendationData(cleanRecommendations);
         await kalkulasiBahanPelengkap(cleanRecommendations);
         
-        // Aktifkan petunjuk interaktif (Onboarding) setelah data sukses dimuat
         setRunTour(true);
       }
     } catch (error) {
@@ -263,21 +264,24 @@ const PrediksiStok = () => {
 
   return (
     <div style={styles.container}>
-      {/* COMPONENT INTERAKTIF TOUR GUIDE */}
-      <Joyride
-        steps={steps}
-        run={runTour}
-        continuous={true}
-        showSkipButton={true}
-        callback={handleJoyrideCallback}
-        styles={{
-          options: {
-            primaryColor: '#2563eb',
-            textColor: '#374151',
-            fontFamily: 'Poppins, sans-serif'
-          }
-        }}
-      />
+      {/* PERBAIKAN UTAMA: MEMANGGIL KOMPONEN VALID HASIL DESTRUKTURISASI GANDA */}
+      {typeof JoyrideComponent === 'function' || typeof JoyrideComponent === 'object' ? (
+        <JoyrideComponent
+          steps={steps}
+          run={runTour}
+          continuous={true}
+          showSkipButton={true}
+          callback={handleJoyrideCallback}
+          styles={{
+            options: {
+              primaryColor: '#2563eb',
+              textColor: '#374151',
+              fontFamily: 'Poppins, sans-serif',
+              zIndex: 5000
+            }
+          }}
+        />
+      ) : null}
 
       <Sidebar />
 
@@ -306,7 +310,6 @@ const PrediksiStok = () => {
         <>
             {/* GRID CUACA & GRAFIK TREN ADAPTIF */}
             <div style={styles.topLayoutGrid}>
-                {/* TARGET TOUR 1: CLASS "tour-weather-card" */}
                 <div style={styles.weatherCard} className="tour-weather-card">
                     <div style={{ position: 'relative', zIndex: 1 }}>
                         <p className="small text-light opacity-75 m-0 mb-1">Estimasi Cuaca Esok Hari</p>
@@ -331,7 +334,6 @@ const PrediksiStok = () => {
                     <Sun size={80} className="position-absolute opacity-15" style={{ right: '-15px', top: '-15px' }} />
                 </div>
 
-                {/* GRAFIK VISUALISASI RECHARTS - TARGET TOUR 2: CLASS "tour-chart-card" */}
                 <div style={styles.card} className="tour-chart-card">
                     <h3 className="fw-semibold text-secondary mb-3 d-flex align-items-center" style={{ fontSize: '15px' }}>
                         <TrendingUp size={16} className="text-primary me-2" /> Visualisasi Tren Porsi Penjualan
@@ -354,7 +356,6 @@ const PrediksiStok = () => {
             <div style={{ ...styles.card, padding: 0, overflow: 'hidden', marginBottom: '24px' }}>
                 <div className="p-3 border-bottom border-light d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2.5">
                     <h3 className="fw-bold text-dark m-0" style={{ fontSize: '15px' }}>Rekomendasi Belanja Buah Utama</h3>
-                    {/* TARGET TOUR 3: CLASS "tour-btn-beli-semua" */}
                     <button onClick={handleBeliSemua} disabled={isUpdating} className="w-100 w-sm-auto justify-content-center tour-btn-beli-semua" style={styles.btnBeliSemua}>
                       <PackageCheck size={16} />
                       {isUpdating ? 'Memperbarui...' : 'Beli Semua Sesuai AI'}
@@ -467,4 +468,4 @@ const PrediksiStok = () => {
   );
 };
 
-export default PrediksiStok
+export default PrediksiStok;
