@@ -7,13 +7,14 @@ import Sidebar from '../components/Sidebar';
 import { getPredictionData } from '../services/ai_api';
 import { db } from '../config/firebase'; 
 import { collection, getDocs, query, where, doc, updateDoc, increment, getDoc } from "firebase/firestore";
-
 import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
 // --- INTEGRASI PEMELIHARAAN ADAPTIF: IMPORT REACT JOYRIDE ---
-import Joyride, { STATUS } from 'react-joyride';
+import * as ReactJoyride from 'react-joyride';
+const Joyride = ReactJoyride.default || ReactJoyride;
+const STATUS = ReactJoyride.STATUS;
 
 const PrediksiStok = () => {
   const navigate = useNavigate();
@@ -466,4 +467,4 @@ const PrediksiStok = () => {
   );
 };
 
-export default PrediksiStok;
+export default PrediksiStok
