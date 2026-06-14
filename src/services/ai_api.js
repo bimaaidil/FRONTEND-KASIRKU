@@ -3,12 +3,13 @@ import axios from 'axios';
 
 const BASE_URL = 'https://backend-kasirku.vercel.app';
 
-// PERBAIKAN 2: MENDEFINISIKAN BASE_SERVER_URL AGAR BEBAS DARI RUNTIME ERROR GLOBAL VERCEL
+// PERBAIKAN MUTLAK: Mengikat variabel ke window object agar terbaca secara global 
+// oleh file index bundler vercel (Menyembuhkan ReferenceError rekap harian/bulanan)
+window.BASE_SERVER_URL = BASE_URL;
 const BASE_SERVER_URL = BASE_URL;
 
 export const getPredictionData = async (date) => {
     try {
-        // Menambahkan parameter harian untuk kebutuhan komputasi jaringan cerdas Bi-LSTM
         const response = await axios.get(`${BASE_URL}/prediksi`, {
             params: { 
                 date: date

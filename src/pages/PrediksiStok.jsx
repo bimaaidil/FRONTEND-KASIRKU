@@ -12,7 +12,7 @@ import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
-// --- PERBAIKAN 1: MENGGUNAKAN LAZY LOADING AGAR SINKRON DENGAN BUNDLING VITE ---
+// --- PERBAIKAN MUTLAK: LAZY LOADING DENGAN PENANGANAN ERROR STRICT RUNTIME ---
 const JoyrideLazy = React.lazy(() => import('react-joyride'));
 
 const PrediksiStok = () => {
@@ -226,7 +226,6 @@ const PrediksiStok = () => {
 
   const handleJoyrideCallback = (data) => {
     const { status } = data;
-    // Mencocokkan status penutupan tur menggunakan string murni untuk mencegah kebergantungan objek eksternal
     if (['finished', 'skipped'].includes(status)) {
       setRunTour(false);
     }
@@ -263,9 +262,9 @@ const PrediksiStok = () => {
 
   return (
     <div style={styles.container}>
-      {/* PERBAIKAN UTAMA: ME-RENDER LAZY COMPONENT DI DALAM SUSPENSE WRAPPER */}
+      {/* PENATAAN BARU: SUSPENSE BERADA PADA CAKUPAN TERTINGGI STRUKTUR LAYOUT TOUR */}
       <React.Suspense fallback={null}>
-        {runTour && (
+        {runTour && typeof JoyrideLazy !== 'undefined' && (
           <JoyrideLazy
             steps={steps}
             run={runTour}
@@ -277,7 +276,7 @@ const PrediksiStok = () => {
                 primaryColor: '#2563eb',
                 textColor: '#374151',
                 fontFamily: 'Poppins, sans-serif',
-                zIndex: 5000
+                zIndex: 9999
               }
             }}
           />
