@@ -12,8 +12,11 @@ import { FaInfoCircle } from 'react-icons/fa';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Sun, AlertCircle, CheckCircle, TrendingUp, Loader, ShoppingCart, PackageCheck, CloudRainWind } from 'lucide-react';
 
-// --- PERBAIKAN MUTLAK: LAZY LOADING DENGAN PENANGANAN ERROR STRICT RUNTIME ---
-const JoyrideLazy = React.lazy(() => import('react-joyride'));
+// --- PERBAIKAN IMPOR UTAMA: IMPOR NAMESPACE SECARA UTUH UNTUK MENANGGULANGI COMPILER VITE ---
+import * as ReactJoyrideNamespace from 'react-joyride';
+
+// Deteksi target modul komponen visual secara aman baik di server-side maupun browser-side
+const JoyrideComponent = ReactJoyrideNamespace.default?.default || ReactJoyrideNamespace.default || ReactJoyrideNamespace;
 
 const PrediksiStok = () => {
   const navigate = useNavigate();
@@ -260,28 +263,29 @@ const PrediksiStok = () => {
     btnBeliSemua: { backgroundColor: '#2563eb', color: 'white', padding: '10px 16px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }
   };
 
+  // Validasi tipe data komponen secara ketat sebelum merender objek untuk menihilkan crash #306
+  const ValidJoyride = (typeof JoyrideComponent === 'function' || typeof JoyrideComponent === 'object') ? JoyrideComponent : null;
+
   return (
     <div style={styles.container}>
-      {/* FIX EROR 306: Suspense wajib diletakkan di luar pengondisian dinamis */}
-      <React.Suspense fallback={null}>
-        {runTour && (
-          <JoyrideLazy
-            steps={steps}
-            run={runTour}
-            continuous={true}
-            showSkipButton={true}
-            callback={handleJoyrideCallback}
-            styles={{
-              options: {
-                primaryColor: '#2563eb',
-                textColor: '#374151',
-                fontFamily: 'Poppins, sans-serif',
-                zIndex: 9999
-              }
-            }}
-          />
-        )}
-      </React.Suspense>
+      {/* PERBAIKAN TOTAL EROR 306: Menggunakan pengaman tipe data objek browser runtime asli */}
+      {runTour && ValidJoyride && (
+        <ValidJoyride
+          steps={steps}
+          run={runTour}
+          continuous={true}
+          showSkipButton={true}
+          callback={handleJoyrideCallback}
+          styles={{
+            options: {
+              primaryColor: '#2563eb',
+              textColor: '#374151',
+              fontFamily: 'Poppins, sans-serif',
+              zIndex: 9999
+            }
+          }}
+        />
+      )}
 
       <Sidebar />
 
@@ -334,13 +338,14 @@ const PrediksiStok = () => {
                     <Sun size={80} className="position-absolute opacity-15" style={{ right: '-15px', top: '-15px' }} />
                 </div>
 
+                {/* PERBAIKAN RESPONSIVE CONTAINER: Menambahkan height numerik statis di level sub-container pembungkus chart */}
                 <div style={styles.card} className="tour-chart-card">
                     <h3 className="fw-semibold text-secondary mb-3 d-flex align-items-center" style={{ fontSize: '15px' }}>
                         <TrendingUp size={16} className="text-primary me-2" /> Visualisasi Tren Porsi Penjualan
                     </h3>
-                    <div style={{ height: '180px', width: '100%' }}>
+                    <div style={{ height: '220px', width: '100%', position: 'relative' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData} margin={{ left: -20, right: 10 }}>
+                            <LineChart data={chartData} margin={{ left: -20, right: 10, top: 10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
