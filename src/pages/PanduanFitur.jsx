@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import { 
+  FaCalendarCheck, 
   FaChartLine, 
-  FaCloudSun, 
   FaShoppingBag, 
-  FaInfoCircle, 
-  FaLightbulb, 
+  FaFileInvoiceDollar, 
+  FaArrowRight, 
   FaCheckCircle 
 } from 'react-icons/fa';
 
@@ -21,17 +21,19 @@ const PanduanFitur = () => {
       padding: isMobile ? '80px 20px 40px 20px' : '40px 40px', 
       backgroundColor: '#F5F6FA' 
     },
-    header: { marginBottom: '30px' },
+    header: { marginBottom: '35px' },
     title: { fontSize: '26px', fontWeight: 'bold', color: '#154784', margin: 0 },
-    subtitle: { fontSize: '14px', color: '#6b7280', marginTop: '4px' },
-    grid: { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '25px' },
-    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', borderLeft: '5px solid #2563eb' },
-    cardHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '15px' },
+    subtitle: { fontSize: '14px', color: '#6b7280', marginTop: '4px', lineHeight: '1.5' },
+    timeline: { display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' },
+    card: { backgroundColor: 'white', borderRadius: '12px', padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', borderLeft: '5px solid #154784', position: 'relative' },
+    cardHeader: { display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px' },
+    stepBadge: { backgroundColor: '#154784', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase' },
     cardTitle: { fontSize: '16px', fontWeight: 'bold', color: '#1f2937', margin: 0 },
-    iconWrapper: { backgroundColor: '#e0f2fe', color: '#2563eb', padding: '10px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    stepList: { paddingLeft: '0', listStyleType: 'none', margin: 0 },
-    stepItem: { display: 'flex', gap: '10px', fontSize: '13.5px', color: '#4b5563', marginBottom: '10px', alignItems: 'flex-start', lineHeight: '1.5' },
-    badge: { display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#fef3c7', color: '#d97706', padding: '8px 12px', borderRadius: '8px', fontSize: '12.5px', fontWeight: '600', marginTop: '20px', width: '100%' }
+    iconWrapper: { backgroundColor: '#e0f2fe', color: '#154784', padding: '10px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+    instructionList: { paddingLeft: '0', listStyleType: 'none', margin: 0 },
+    instructionItem: { display: 'flex', gap: '10px', fontSize: '13.5px', color: '#4b5563', marginBottom: '12px', alignItems: 'flex-start', lineHeight: '1.6' },
+    arrowIcon: { color: '#154784', marginTop: '5px', flexShrink: 0 },
+    footerBadge: { display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#d1fae5', color: '#065f46', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', marginTop: '25px', width: '100%', border: '1px solid #a7f3d0' }
   };
 
   return (
@@ -41,82 +43,99 @@ const PanduanFitur = () => {
       <div style={styles.mainContent}>
         {/* HEADER HALAMAN */}
         <div style={styles.header}>
-          <h2 style={styles.title}>Pusat Bantuan & Dokumentasi Sistem</h2>
-          <p style={styles.subtitle}>Fase Pemeliharaan Adaptif (Adaptive Maintenance) — Panduan Operasional Modul Cerdas AI Kasirku</p>
+          <h2 style={styles.title}>Alur & Tahapan Penggunaan Sistem Kasirku</h2>
+          <p style={styles.subtitle}>
+            Dokumentasi Terpadu Prosedur Kerja Operasional Penggunaan Aplikasi Secara Berurutan Pada Outlet Varisha Jus
+          </p>
         </div>
 
-        <div style={styles.grid}>
-          {/* KARTU 1: ESTIMASI CUACA */}
+        {/* TIMELINE TAHAPAN PENGGUNAAN */}
+        <div style={styles.timeline}>
+          
+          {/* TAHAP 1: ABSENSI */}
           <div style={styles.card}>
             <div style={styles.cardHeader}>
-              <div style={styles.iconWrapper}><FaCloudSun size={20} /></div>
-              <h4 style={styles.cardTitle}>Fitur Estimasi Cuaca & AI Insight</h4>
+              <span style={styles.stepBadge}>Tahap 01</span>
+              <div style={styles.iconWrapper}><FaCalendarCheck size={18} /></div>
+              <h4 style={styles.cardTitle}>Manajemen Absensi Awal Kerja Karyawan</h4>
             </div>
-            <ul style={styles.stepList}>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span>Menampilkan perkiraan suhu, kelembapan, dan kondisi cuaca di Kota Pekanbaru untuk esok hari secara otomatis.</span>
+            <ul style={styles.instructionList}>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={styles.arrowIcon} size={12} />
+                <span>Karyawan operasional wajib masuk ke menu <b>Absensi</b> sesaat setelah outlet dibuka untuk menginput data kehadiran (*clock-in*).</span>
               </li>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span><b>AI Insight:</b> Menyediakan narasi rekomendasi kontekstual dari kecerdasan buatan untuk mempersiapkan operasional toko berdasarkan kondisi cuaca.</span>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={styles.arrowIcon} size={12} />
+                <span>Sistem mencatat jam masuk kerja riil secara otomatis ke dalam database untuk dipantau oleh Admin/Pemilik toko melalui panel monitoring.</span>
               </li>
             </ul>
           </div>
 
-          {/* KARTU 2: GRAFIK PREDIKSI */}
+          {/* TAHAP 2: ANALISIS PREDIKSI */}
           <div style={{ ...styles.card, borderLeftColor: '#10b981' }}>
-            <div style={{ ...styles.iconWrapper, backgroundColor: '#d1fae5', color: '#10b981' }}>
-              <FaChartLine size={20} />
+            <div style={styles.cardHeader}>
+              <span style={{ ...styles.stepBadge, backgroundColor: '#10b981' }}>Tahap 02</span>
+              <div style={{ ...styles.iconWrapper, backgroundColor: '#d1fae5', color: '#10b981' }}><FaChartLine size={18} /></div>
+              <h4 style={styles.cardTitle}>Pemeriksaan Proyeksi Kebutuhan Stok AI</h4>
             </div>
-            <h4 style={styles.cardTitle}>Visualisasi Tren Prediksi Bi-LSTM</h4>
-            <ul style={styles.stepList}>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span>Grafik interaktif menampilkan pergerakan fluktuasi porsi penjualan harian buah di Varisha Jus.</span>
+            <ul style={styles.instructionList}>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#10b981' }} size={12} />
+                <span>Akses menu <b>Fitur Cerdas &gt; Prediksi Stok</b> guna melihat komputasi hasil rekomendasi pasokan bahan baku buah untuk esok hari berbasis algoritma <b>Bi-LSTM</b>.</span>
               </li>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span>Kurva didasarkan pada pembelajaran data histori penjualan runtut waktu (*time-series*) selama 7 hari ke belakang.</span>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#10b981' }} size={12} />
+                <span>Amati panel <b>Estimasi Cuaca & AI Insight</b> untuk menganalisis pengaruh fluktuasi cuaca harian Pekanbaru terhadap grafik tren perkiraan volume penjualan produk jus.</span>
               </li>
             </ul>
           </div>
 
-          {/* KARTU 3: AKSI BELANJA */}
+          {/* TAHAP 3: EKSEKUSI BELANJA */}
           <div style={{ ...styles.card, borderLeftColor: '#f59e0b' }}>
-            <div style={{ ...styles.iconWrapper, backgroundColor: '#fef3c7', color: '#f59e0b' }}>
-              <FaShoppingBag size={20} />
+            <div style={styles.cardHeader}>
+              <span style={{ ...styles.stepBadge, backgroundColor: '#f59e0b' }}>Tahap 03</span>
+              <div style={{ ...styles.iconWrapper, backgroundColor: '#fef3c7', color: '#f59e0b' }}><FaShoppingBag size={18} /></div>
+              <h4 style={styles.cardTitle}>Otomatisasi Eksekusi Restok ke Database</h4>
             </div>
-            <h4 style={styles.cardTitle}>Otomatisasi Manajemen Stok Barang</h4>
-            <ul style={styles.stepList}>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span>Sistem secara otomatis membandingkan sisa stok riil di database dengan target kebutuhan besok hasil perhitungan AI.</span>
+            <ul style={styles.instructionList}>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#f59e0b' }} size={12} />
+                <span>Sistem secara otomatis mengalkulasi perbandingan antara sisa stok riil di gudang dengan target kebutuhan besok hasil hitungan model AI.</span>
               </li>
-              <li style={styles.stepItem}>
-                <FaCheckCircle className="text-success mt-1 flex-shrink-0" size={14} />
-                <span><b>Tombol Beli Semua:</b> Memungkinkan penambahan kuantitas pasokan komoditas buah secara massal ke dalam database Firestore hanya dengan satu klik action.</span>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#f59e0b' }} size={12} />
+                <span>Tekan tombol <b>Beli Semua Sesuai AI</b> untuk langsung menambahkan kuantitas pasokan komoditas buah utama serta bahan pelengkap secara massal ke dalam database <b>Cloud Firestore</b>.</span>
               </li>
             </ul>
           </div>
 
-          {/* KARTU 4: CATATAN AKADEMIS FOR SIDANG */}
-          <div style={{ ...styles.card, borderLeftColor: '#6366f1' }}>
-            <div style={{ ...styles.iconWrapper, backgroundColor: '#e0e7ff', color: '#6366f1' }}>
-              <FaInfoCircle size={20} />
+          {/* TAHAP 4: TRANSAKSI & LAPORAN */}
+          <div style={{ ...styles.card, borderLeftColor: '#ef4444' }}>
+            <div style={styles.cardHeader}>
+              <span style={{ ...styles.stepBadge, backgroundColor: '#ef4444' }}>Tahap 04</span>
+              <div style={{ ...styles.iconWrapper, backgroundColor: '#fee2e2', color: '#ef4444' }}><FaFileInvoiceDollar size={18} /></div>
+              <h4 style={styles.cardTitle}>Pelayanan Transaksi Kasir & Rekapitulasi Akhir</h4>
             </div>
-            <h4 style={styles.cardTitle}>Catatan Metrik Usability (SUS)</h4>
-            <ul style={styles.stepList}>
-              <li style={styles.stepItem}>
-                <FaLightbulb className="text-warning mt-1 flex-shrink-0" size={14} />
-                <span>Halaman ini diimplementasikan guna mereduksi beban kognitif pengguna awam berdasarkan umpan balik indikator **P10 (Kebutuhan Membiasakan Diri)** pada pengujian SUS.</span>
+            <ul style={styles.instructionList}>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#ef4444' }} size={12} />
+                <span>Gunakan menu <b>Transaksi</b> untuk melayani input pesanan pesanan menu pembeli. Sistem secara otomatis memotong stok barang riil terdaftar yang berada di database produk.</span>
+              </li>
+              <li style={styles.instructionItem}>
+                <FaArrowRight style={{ ...styles.arrowIcon, color: '#ef4444' }} size={12} />
+                <span>Di akhir jam operasional kerja outlet, buka kelompok menu <b>Laporan</b> (Rekap Harian, Bulanan, dan Kas) untuk memvalidasi pencatatan pembukuan finansial masuk secara transparan.</span>
               </li>
             </ul>
-            <div style={styles.badge}>
-              🤖 Status Sistem: Terintegrasi dengan Firebase & Cloud Model API.
-            </div>
           </div>
+
         </div>
+
+        {/* PENANDA INTEGRASI DATA SISTEM */}
+        <div style={styles.footerBadge}>
+          <FaCheckCircle size={16} />
+          <span>Seluruh rangkaian tahapan operasional di atas telah terintegrasi secara dinamis dengan Firebase Services dan API Model Bi-LSTM.</span>
+        </div>
+
       </div>
     </div>
   );
