@@ -59,7 +59,6 @@ const RekapBulanan = () => {
             const productItems = Array.isArray(transaksi.items) ? transaksi.items : [];
             
             productItems.forEach(subItem => {
-                // Hitung subtotal tiap baris produk secara aman
                 const qty = Number(subItem.qty || subItem.quantity || 0);
                 const price = Number(subItem.price || subItem.harga || 0);
                 const rowSubtotal = qty * price;
@@ -74,7 +73,6 @@ const RekapBulanan = () => {
                 });
             });
             
-            // Antisipasi jika dokumen transaksi tidak memiliki array items, tapi punya subtotal global
             if (productItems.length === 0) {
                 flattenedItems.push({
                     id: transaksi.id,
@@ -108,14 +106,15 @@ const RekapBulanan = () => {
   const currentItems = showReport ? dataBulanan.slice(indexOfFirstItem, indexOfLastItem) : [];
   const totalPages = Math.ceil(dataBulanan.length / itemsPerPage);
 
-  // Menghitung total omzet bulanan gabungan dari data bersih yang sudah di-flat
   const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + (Number(curr.subtotal) || 0), 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
   return (
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
-      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+      
+      {/* Container utama dengan max-width 100% dan overflow-hidden agar mencegah scrollbar horizontal liar */}
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0', maxWidth: '100%', overflowX: 'hidden' }}>
         <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Bulanan (Cloud Database)</h2>
 
         {/* INPUT FILTER RESPONSIVE */}
@@ -133,17 +132,18 @@ const RekapBulanan = () => {
         </div>
 
         {/* TABLE CARD CONTAINER */}
-        <div className="card border-0 shadow-sm p-4 bg-white rounded-3" style={{ minHeight: '450px' }}>
-          <div className="table-responsive flex-grow-1">
-            <table className="table align-middle text-nowrap m-0" style={{ fontSize: '14px' }}>
+        <div className="card border-0 shadow-sm p-3 p-md-4 bg-white rounded-3" style={{ minHeight: '450px' }}>
+          <div className="table-responsive flex-grow-1" style={{ width: '100%', overflowX: 'auto' }}>
+            {/* Mengatur layout tabel ke fixed dan memberikan batas persentase kolom agar seimbang di layar laptop */}
+            <table className="table align-middle m-0" style={{ fontSize: '14px', width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                     <tr className="text-secondary small text-uppercase">
-                        <th className="border-0 pb-3">No</th>
-                        <th className="border-0 pb-3">Tanggal</th>
-                        <th className="border-0 pb-3">Produk</th>
-                        <th className="border-0 pb-3 text-center">Jumlah</th>
-                        <th className="border-0 pb-3 text-center">Harga</th>
-                        <th className="border-0 pb-3 text-center">Sub Total</th>
+                        <th style={{ width: '60px', paddingBottom: '1rem' }} className="border-0">No</th>
+                        <th style={{ width: '130px', paddingBottom: '1rem' }} className="border-0">Tanggal</th>
+                        <th style={{ width: '250px', paddingBottom: '1rem' }} className="border-0">Produk</th>
+                        <th style={{ width: '90px', paddingBottom: '1rem' }} className="border-0 text-center">Jumlah</th>
+                        <th style={{ width: '140px', paddingBottom: '1rem' }} className="border-0 text-center">Harga</th>
+                        <th style={{ width: '150px', paddingBottom: '1rem' }} className="border-0 text-center">Sub Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,11 +158,11 @@ const RekapBulanan = () => {
                         currentItems.map((item, index) => (
                             <tr key={`${item.id}-${index}`} className="border-top">
                                 <td className="py-3 text-muted">{indexOfFirstItem + index + 1}</td>
-                                <td className="py-3 text-secondary">{item.date}</td>
-                                <td className="py-3 fw-medium text-dark">{item.product}</td>
-                                <td className="py-3 text-center text-dark">{item.qty}</td>
-                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price)}</td>
-                                <td className="py-3 text-center text-primary fw-medium">{formatRupiah(item.subtotal)}</td>
+                                <td className="py-3 text-secondary text-truncate">{item.date}</td>
+                                <td className="py-3 fw-medium text-dark text-wrap" style={{ wordBreak: 'break-word' }}>{item.product}</td>
+                                <td className="py-3 text-center text-dark font-monospace">{item.qty}</td>
+                                <td className="py-3 text-center text-secondary font-monospace">{formatRupiah(item.price)}</td>
+                                <td className="py-3 text-center text-primary fw-medium font-monospace">{formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
                     ) : (
@@ -182,25 +182,26 @@ const RekapBulanan = () => {
                       Total Pendapatan {selectedMonth}: <span className="text-primary">{formatRupiah(totalPendapatan)}</span>
                   </div>
 
+                  {/* Navigasi Paginasi yang Rapi & Otomatis Membungkus Jika Terlalu Banyak Angka */}
                   {totalPages > 1 && (
-                      <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-2 mt-2">
-                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '35px', height: '35px' }} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                              <FaChevronLeft size={10} />
+                      <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-1 mt-2">
+                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                              <FaChevronLeft size={9} />
                           </button>
                           
                           {Array.from({ length: totalPages }, (_, i) => (
                               <button 
                                   key={i + 1} 
                                   className={`btn btn-sm d-flex align-items-center justify-content-center fw-medium ${currentPage === i + 1 ? 'btn-primary' : 'btn-light border'}`}
-                                  style={{ width: '35px', height: '35px' }}
+                                  style={{ width: '32px', height: '32px', fontSize: '12px' }}
                                   onClick={() => setCurrentPage(i + 1)}
                               >
                                   {i + 1}
                               </button>
                           ))}
 
-                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '35px', height: '35px' }} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
-                              <FaChevronRight size={10} />
+                          <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '32px', height: '32px' }} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                              <FaChevronRight size={9} />
                           </button>
                       </div>
                   )}
