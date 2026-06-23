@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { FaChevronRight, FaTimes } from 'react-icons/fa';
 
+// --- IMPORT API KAS CLOUD ---
+import { saveKasLog } from '../services/kas_api';
+
 const RekapKas = () => {
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName') || 'Karyawan';
@@ -13,6 +16,7 @@ const RekapKas = () => {
   const [showKeluarModal, setShowKeluarModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const date = new Date();
@@ -20,13 +24,13 @@ const RekapKas = () => {
     setCurrentDate(date.toLocaleDateString('id-ID', options));
   }, []);
 
-  const handleSave = (type) => {
+  const handleSave = async (type) => {
     if (!amount || !description) {
         alert("Mohon lengkapi semua data!");
         return;
     }
 
-    const existingData = JSON.parse(localStorage.getItem('kasData')) || [];
+    setIsSaving(true);
     const newTransaction = {
         id: Date.now(),
         type: type, 
@@ -37,13 +41,20 @@ const RekapKas = () => {
         user: userName 
     };
 
-    localStorage.setItem('kasData', JSON.stringify([newTransaction, ...existingData]));
-    alert(`Berhasil menyimpan ${type}`);
-    
-    setAmount('');
-    setDescription('');
-    setShowMasukModal(false);
-    setShowKeluarModal(false);
+    try {
+        // Simpan langsung ke Cloud Firestore via Flask API
+        await saveKasLog(newTransaction);
+        alert(`Berhasil menyimpan ${type} ke cloud database!`);
+        
+        setAmount('');
+        setDescription('');
+        setShowMasukModal(false);
+        setShowKeluarModal(false);
+    } catch (error) {
+        alert("Gagal menyimpan data ke server cloud, silakan coba lagi.");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -96,27 +107,28 @@ const RekapKas = () => {
             <div className="card border-0 shadow-lg p-4 bg-white rounded-3 w-100" style={{ maxWidth: '440px' }}>
                 <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style={{ borderColor: '#154784' }}>
                     <h5 className="fw-bold text-dark m-0">{showMasukModal ? 'Input Uang Masuk' : 'Input Uang Keluar'}</h5>
-                    <button className="btn btn-link text-muted p-0" onClick={handleCancel}><FaTimes /></button>
+                    <button className="btn btn-link text-muted p-0" onClick={handleCancel} disabled={isSaving}><FaTimes /></button>
                 </div>
                 
                 <div className="mb-3">
                     <label className="form-label fw-semibold text-secondary small">Jumlah (Rp)</label>
-                    <input type="number" placeholder="Contoh: 50000" className="form-control bg-light py-2" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                    <input type="number" placeholder="Contoh: 50000" className="form-control bg-light py-2" value={amount} onChange={(e) => setAmount(e.target.value)} disabled={isSaving} required />
                 </div>
                 
                 <div className="mb-4">
                     <label className="form-label fw-semibold text-secondary small">Keterangan</label>
-                    <input type="text" placeholder={showMasukModal ? "Contoh: Modal awal" : "Contoh: Beli Es Batu"} className="form-control bg-light py-2" value={description} onChange={(e) => setDescription(e.target.value)} required />
+                    <input type="text" placeholder={showMasukModal ? "Contoh: Modal awal" : "Contoh: Beli Es Batu"} className="form-control bg-light py-2" value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSaving} required />
                 </div>
                 
                 <div className="d-flex justify-content-end gap-2">
-                    <button className="btn btn-secondary px-4 fw-semibold" onClick={handleCancel}>Batal</button>
+                    <button className="btn btn-secondary px-4 fw-semibold" onClick={handleCancel} disabled={isSaving}>Batal</button>
                     <button 
-                      className="btn text-white px-4 fw-bold" 
+                      className="btn text-white px-4 fw-bold d-flex align-items-center gap-2" 
                       style={{ backgroundColor: showMasukModal ? '#154784' : '#dc2626', border: 'none' }} 
                       onClick={() => handleSave(showMasukModal ? 'Uang Masuk' : 'Uang Keluar')}
+                      disabled={isSaving}
                     >
-                      Simpan Data
+                      {isSaving ? 'Menyimpan...' : 'Simpan Data'}
                     </button>
                 </div>
             </div>
