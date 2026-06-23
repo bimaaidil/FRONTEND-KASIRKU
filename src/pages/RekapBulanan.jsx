@@ -28,8 +28,8 @@ const RekapBulanan = () => {
     try {
         const allHistory = await getTransaksiLogs();
         
-        // Pemfilteran cerdas mengantisipasi format string tanggal Firestore ("23 Juni 2026" / "23/06/2026")
-        const filtered = allHistory.filter(item => {
+        // 1. Filter dokumen transaksi berdasarkan bulan yang dipilih
+        const filteredTransactions = allHistory.filter(item => {
             if (!item.date) return false;
             
             if (item.date.includes(selectedMonth)) {
@@ -37,18 +37,61 @@ const RekapBulanan = () => {
             }
 
             const monthsMap = {
-                'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
-                'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
-                'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+                'Januari': '-01-', 'Februari': '-02-', 'Maret': '-03-', 'April': '-04-',
+                'Mei': '-05-', 'Juni': '-06-', 'Juli': '-07-', 'Agustus': '-08-',
+                'September': '-09-', 'Oktober': '-10-', 'November': '-11-', 'Desember': '-12-'
             };
+            
+            const monthsMapAlt = {
+                'Januari': '/01/', 'Februari': '/02/', 'Maret': '/03/', 'April': '/04/',
+                'Mei': '/05/', 'Juni': '/06/', 'Juli': '/07/', 'Agustus': '/08-',
+                'September': '/09/', 'Oktober': '/10/', 'November': '/11/', 'Desember': '/12/'
+            };
+            
             const targetNumber = monthsMap[selectedMonth];
-            return item.date.split('/')[1] === targetNumber || item.date.split('-')[1] === targetNumber;
+            const targetNumberAlt = monthsMapAlt[selectedMonth];
+            return item.date.includes(targetNumber) || item.date.includes(targetNumberAlt) || item.date.split('/')[1] === targetNumber.replace(/-/g, '') || item.date.split('-')[1] === targetNumber.replace(/-/g, '');
         });
 
-        setDataBulanan(filtered);
+        // 2. Bongkar array 'items' bertingkat dari Firestore menjadi baris produk yang flat/lurus
+        const flattenedItems = [];
+        filteredTransactions.forEach(transaksi => {
+            const productItems = Array.isArray(transaksi.items) ? transaksi.items : [];
+            
+            productItems.forEach(subItem => {
+                // Hitung subtotal tiap baris produk secara aman
+                const qty = Number(subItem.qty || subItem.quantity || 0);
+                const price = Number(subItem.price || subItem.harga || 0);
+                const rowSubtotal = qty * price;
+
+                flattenedItems.push({
+                    id: transaksi.id,
+                    date: transaksi.date,
+                    product: subItem.name || subItem.nama || subItem.product || 'Produk Tidak Diketahui',
+                    qty: qty,
+                    price: price,
+                    subtotal: rowSubtotal > 0 ? rowSubtotal : (Number(transaksi.subtotal) || 0)
+                });
+            });
+            
+            // Antisipasi jika dokumen transaksi tidak memiliki array items, tapi punya subtotal global
+            if (productItems.length === 0) {
+                flattenedItems.push({
+                    id: transaksi.id,
+                    date: transaksi.date,
+                    product: transaksi.product || 'Transaksi POS',
+                    qty: Number(transaksi.qty || 1),
+                    price: Number(transaksi.price || transaksi.subtotal || 0),
+                    subtotal: Number(transaksi.subtotal || 0)
+                });
+            }
+        });
+
+        setDataBulanan(flattenedItems);
         setShowReport(true);
         setCurrentPage(1); 
     } catch (error) {
+        console.error(error);
         alert("Gagal memuat rekap bulanan dari cloud database.");
     } finally {
         setLoading(false);
@@ -65,6 +108,7 @@ const RekapBulanan = () => {
   const currentItems = showReport ? dataBulanan.slice(indexOfFirstItem, indexOfLastItem) : [];
   const totalPages = Math.ceil(dataBulanan.length / itemsPerPage);
 
+  // Menghitung total omzet bulanan gabungan dari data bersih yang sudah di-flat
   const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + (Number(curr.subtotal) || 0), 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
@@ -112,12 +156,12 @@ const RekapBulanan = () => {
                         </tr>
                     ) : showReport && currentItems.length > 0 ? (
                         currentItems.map((item, index) => (
-                            <tr key={item.id || index} className="border-top">
+                            <tr key={`${item.id}-${index}`} className="border-top">
                                 <td className="py-3 text-muted">{indexOfFirstItem + index + 1}</td>
                                 <td className="py-3 text-secondary">{item.date}</td>
-                                <td className="py-3 fw-medium text-dark">{item.product || item.product_name || item.nama}</td>
-                                <td className="py-3 text-center text-dark">{item.qty || item.quantity}</td>
-                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price || item.harga)}</td>
+                                <td className="py-3 fw-medium text-dark">{item.product}</td>
+                                <td className="py-3 text-center text-dark">{item.qty}</td>
+                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price)}</td>
                                 <td className="py-3 text-center text-primary fw-medium">{formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
@@ -132,7 +176,7 @@ const RekapBulanan = () => {
             </table>
           </div>
 
-          {showReport && currentItems.length > 0 && !loading && (
+          {showReport && dataBulanan.length > 0 && !loading && (
               <div className="mt-4">
                   <div className="text-end fw-bold text-dark mb-3" style={{ fontSize: '16px' }}>
                       Total Pendapatan {selectedMonth}: <span className="text-primary">{formatRupiah(totalPendapatan)}</span>
