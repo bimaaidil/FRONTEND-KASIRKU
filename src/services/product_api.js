@@ -1,10 +1,13 @@
 // src/services/product_api.js
 import axios from 'axios';
 
-// Arahkan ke endpoint produk di Python Flask
-const API_URL = 'https://backend-kasirku.vercel.app/products';
+// Definisikan base URL backend Python Flask
+const BASE_URL = 'https://backend-kasirku.vercel.app';
 
-// 1. AMBIL SEMUA PRODUK (GET)
+// Tambahkan sub-route '/products' untuk sinkronisasi rute Blueprint di app.py Flask
+const API_URL = `${BASE_URL}/products`;
+
+// 1. AMBIL SEMUA DATA PRODUK (GET)
 export const getProducts = async () => {
   try {
     const response = await axios.get(API_URL);
@@ -15,7 +18,7 @@ export const getProducts = async () => {
   }
 };
 
-// 2. HAPUS PRODUK (DELETE)
+// 2. HAPUS DATA PRODUK (DELETE)
 export const deleteProduct = async (id) => {
   try {
     await axios.delete(`${API_URL}/${id}`);
@@ -26,7 +29,7 @@ export const deleteProduct = async (id) => {
   }
 };
 
-// 3. TAMBAH PRODUK (POST) - Akan dipakai di halaman TambahProduk
+// 3. TAMBAH DATA PRODUK BARU (POST)
 export const addProduct = async (productData) => {
   try {
     const response = await axios.post(API_URL, productData);
@@ -37,7 +40,7 @@ export const addProduct = async (productData) => {
   }
 };
 
-// 4. UPDATE PRODUK (PUT) - Akan dipakai di halaman EditProduk
+// 4. PERBARUI DATA PRODUK (PUT)
 export const updateProduct = async (id, productData) => {
   try {
     const response = await axios.put(`${API_URL}/${id}`, productData);
