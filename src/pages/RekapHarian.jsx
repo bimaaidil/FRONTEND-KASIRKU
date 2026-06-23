@@ -1,30 +1,43 @@
 // src/pages/RekapHarian.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { Loader } from 'lucide-react';
+
+// --- IMPORT API TRANSAKSI CLOUD ---
+import { getTransaksiLogs } from '../services/transaksi_api';
 
 const RekapHarian = () => {
-  const navigate = useNavigate();
-
   const [selectedDay, setSelectedDay] = useState(''); 
   const [showReport, setShowReport] = useState(false);
   const [currentData, setCurrentData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleTampilkan = () => {
+  const handleTampilkan = async () => {
     if (selectedDay === '') {
         alert("Silakan pilih hari terlebih dahulu!");
         return;
     }
-    const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
     
-    // Normalisasi string huruf kecil untuk menghindari sensitivitas karakter (case-sensitive)
-    const filtered = allHistory.filter(item => {
-        if (!item.day) return false;
-        return item.day.toLowerCase() === selectedDay.toLowerCase();
-    });
-    
-    setCurrentData(filtered);
-    setShowReport(true); 
+    setLoading(true);
+    setShowReport(false);
+
+    try {
+        // Ambil data transaksi langsung dari server cloud database
+        const allHistory = await getTransaksiLogs();
+        
+        // Memastikan pencocokan huruf kecil/besar berjalan aman
+        const filtered = allHistory.filter(item => {
+            if (!item.day) return false;
+            return item.day.toLowerCase() === selectedDay.toLowerCase();
+        });
+        
+        setCurrentData(filtered);
+        setShowReport(true); 
+    } catch (error) {
+        alert("Gagal memuat laporan harian dari server cloud.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleDayChange = (e) => {
@@ -39,18 +52,20 @@ const RekapHarian = () => {
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
       <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
-        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Harian</h2>
+        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Harian (Cloud Database)</h2>
 
         {/* HARIAN INPUT FILTER RESPONSIVE */}
         <div className="d-flex flex-column flex-sm-row gap-2 mb-4 align-items-sm-center">
-            <select className="form-select bg-white py-2" style={{ minWidth: '180px' }} value={selectedDay} onChange={handleDayChange}>
+            <select className="form-select bg-white py-2" style={{ minWidth: '180px' }} value={selectedDay} onChange={handleDayChange} disabled={loading}>
                 <option value="">Pilih nama hari...</option>
                 {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(day => (
                     <option key={day} value={day}>{day}</option>
                 ))}
             </select>
             <input type="text" value="Bulan Sekarang" readOnly className="form-control bg-light text-center py-2" style={{ width: window.innerWidth > 576 ? '140px' : '100%' }} />
-            <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto" onClick={handleTampilkan}>Tampilkan Laporan</button>
+            <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto d-flex align-items-center justify-content-center gap-2" onClick={handleTampilkan} disabled={loading}>
+                {loading ? 'Memuat Data...' : 'Tampilkan Laporan'}
+            </button>
         </div>
 
         {/* DATAGRID TABLE RESPONSIVE */}
@@ -68,22 +83,28 @@ const RekapHarian = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {showReport && currentData.length > 0 ? (
+                    {loading ? (
+                        <tr>
+                            <td colSpan="6" className="text-center py-5 text-secondary">
+                                <Loader className="animate-spin mb-2 mx-auto text-primary" />
+                                Menarik Rekap Transaksi Real-time...
+                            </td>
+                        </tr>
+                    ) : showReport && currentData.length > 0 ? (
                         currentData.map((item, index) => (
-                            // Menggunakan fallback index jika item.id bernilai kosong/undefined
                             <tr key={item.id || index} className="border-top">
                                 <td className="py-3 text-muted">{index + 1}</td>
                                 <td className="py-3 text-secondary">{item.date}</td>
-                                <td className="py-3 fw-medium text-dark">{item.product}</td>
-                                <td className="py-3 text-center text-dark">{item.qty}</td>
-                                <td className="py-3 text-center text-secondary">Rp {formatRupiah(item.price)}</td>
+                                <td className="py-3 fw-medium text-dark">{item.product || item.product_name || item.nama}</td>
+                                <td className="py-3 text-center text-dark">{item.qty || item.quantity}</td>
+                                <td className="py-3 text-center text-secondary">Rp {formatRupiah(item.price || item.harga)}</td>
                                 <td className="py-3 text-center text-primary fw-medium">Rp {formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
                     ) : (
                         <tr>
                             <td colSpan="6" className="text-center text-muted py-5">
-                                {showReport ? "Tidak ada transaksi pada hari ini." : "Silakan pilih hari untuk melihat rekap."}
+                                {showReport ? "Tidak ada transaksi pada hari ini di cloud database." : "Silakan pilih hari untuk melihat rekap."}
                             </td>
                         </tr>
                     )}
@@ -91,7 +112,7 @@ const RekapHarian = () => {
             </table>
           </div>
 
-          {showReport && currentData.length > 0 && (
+          {showReport && currentData.length > 0 && !loading && (
               <div className="text-end fw-bold text-dark mt-4" style={{ fontSize: '16px' }}>
                   Total Pendapatan {selectedDay}: <span className="text-primary">Rp {formatRupiah(totalPendapatan)}</span>
               </div>

@@ -1,48 +1,58 @@
 // src/pages/RekapBulanan.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { Loader } from 'lucide-react';
+
+// --- IMPORT API TRANSAKSI CLOUD ---
+import { getTransaksiLogs } from '../services/transaksi_api';
 
 const RekapBulanan = () => {
-  const navigate = useNavigate();
-
   const [selectedMonth, setSelectedMonth] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [dataBulanan, setDataBulanan] = useState([]); 
+  const [loading, setLoading] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6; 
 
-  const handleTampilkan = () => {
+  const handleTampilkan = async () => {
     if (selectedMonth === '') {
         alert("Silakan pilih bulan terlebih dahulu!");
         return;
     }
-    const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
-    
-    // Pembenahan deteksi string bulan secara dinamis agar aman dari format tanggal / maupun spasi text
-    const filtered = allHistory.filter(item => {
-        if (!item.date) return false;
+
+    setLoading(true);
+    setShowReport(false);
+
+    try {
+        const allHistory = await getTransaksiLogs();
         
-        // Cek jika format string tanggal mengandung nama bulan (ex: "23 Juni 2026")
-        if (item.date.includes(selectedMonth)) {
-            return true;
-        }
+        // Pemfilteran cerdas mengantisipasi format string tanggal Firestore ("23 Juni 2026" / "23/06/2026")
+        const filtered = allHistory.filter(item => {
+            if (!item.date) return false;
+            
+            if (item.date.includes(selectedMonth)) {
+                return true;
+            }
 
-        // Jalankan opsi pencocokan angka jika format string tanggal berupa angka (ex: "23/06/2026")
-        const monthsMap = {
-            'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
-            'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
-            'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
-        };
-        const targetNumber = monthsMap[selectedMonth];
-        return item.date.split('/')[1] === targetNumber || item.date.split('-')[1] === targetNumber;
-    });
+            const monthsMap = {
+                'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
+                'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
+                'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+            };
+            const targetNumber = monthsMap[selectedMonth];
+            return item.date.split('/')[1] === targetNumber || item.date.split('-')[1] === targetNumber;
+        });
 
-    setDataBulanan(filtered);
-    setShowReport(true);
-    setCurrentPage(1); 
+        setDataBulanan(filtered);
+        setShowReport(true);
+        setCurrentPage(1); 
+    } catch (error) {
+        alert("Gagal memuat rekap bulanan dari cloud database.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleMonthChange = (e) => {
@@ -62,18 +72,20 @@ const RekapBulanan = () => {
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
       <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
-        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Bulanan</h2>
+        <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Bulanan (Cloud Database)</h2>
 
         {/* INPUT FILTER RESPONSIVE */}
         <div className="d-flex flex-column flex-sm-row gap-2 mb-4 align-items-sm-center">
-            <select className="form-select bg-white py-2" style={{ minWidth: '180px' }} value={selectedMonth} onChange={handleMonthChange}>
+            <select className="form-select bg-white py-2" style={{ minWidth: '180px' }} value={selectedMonth} onChange={handleMonthChange} disabled={loading}>
                 <option value="">Pilih nama bulan...</option>
                 {["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"].map(m => (
                     <option key={m} value={m}>{m}</option>
                 ))}
             </select>
             <input type="text" value="2026" readOnly className="form-control bg-light text-center py-2" style={{ width: window.innerWidth > 576 ? '80px' : '100%' }} />
-            <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto" onClick={handleTampilkan}>Tampilkan Laporan</button>
+            <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto" onClick={handleTampilkan} disabled={loading}>
+                {loading ? 'Memuat Data...' : 'Tampilkan Laporan'}
+            </button>
         </div>
 
         {/* TABLE CARD CONTAINER */}
@@ -91,21 +103,28 @@ const RekapBulanan = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {showReport && currentItems.length > 0 ? (
+                    {loading ? (
+                        <tr>
+                            <td colSpan="6" className="text-center py-5 text-secondary">
+                                <Loader className="animate-spin mb-2 mx-auto text-primary" />
+                                Menghitung Rekap Laporan Bulanan...
+                            </td>
+                        </tr>
+                    ) : showReport && currentItems.length > 0 ? (
                         currentItems.map((item, index) => (
                             <tr key={item.id || index} className="border-top">
                                 <td className="py-3 text-muted">{indexOfFirstItem + index + 1}</td>
                                 <td className="py-3 text-secondary">{item.date}</td>
-                                <td className="py-3 fw-medium text-dark">{item.product}</td>
-                                <td className="py-3 text-center text-dark">{item.qty}</td>
-                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price)}</td>
+                                <td className="py-3 fw-medium text-dark">{item.product || item.product_name || item.nama}</td>
+                                <td className="py-3 text-center text-dark">{item.qty || item.quantity}</td>
+                                <td className="py-3 text-center text-secondary">{formatRupiah(item.price || item.harga)}</td>
                                 <td className="py-3 text-center text-primary fw-medium">{formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
                     ) : (
                         <tr>
                             <td colSpan="6" className="text-center text-muted py-5">
-                                {showReport ? "Tidak ada data pada bulan ini." : "Silakan pilih bulan dan klik Tampilkan Laporan."}
+                                {showReport ? "Tidak ada data penjualan pada bulan ini." : "Silakan pilih bulan dan klik Tampilkan Laporan."}
                             </td>
                         </tr>
                     )}
@@ -113,7 +132,7 @@ const RekapBulanan = () => {
             </table>
           </div>
 
-          {showReport && currentItems.length > 0 && (
+          {showReport && currentItems.length > 0 && !loading && (
               <div className="mt-4">
                   <div className="text-end fw-bold text-dark mb-3" style={{ fontSize: '16px' }}>
                       Total Pendapatan {selectedMonth}: <span className="text-primary">{formatRupiah(totalPendapatan)}</span>
