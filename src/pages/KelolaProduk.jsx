@@ -31,28 +31,42 @@ const KelolaProduk = () => {
         rawData = response.products;
       } else if (response && typeof response === 'object') {
         // Jika Flask mengembalikan data bertipe Object Map (kunci berupa ID Dokumen Firestore)
-        rawData = Object.keys(response).map(key => ({
-          id: key,
-          ...response[key]
-        }));
+        rawData = Object.keys(response).map(key => {
+          const itemData = response[key];
+          
+          // Membongkar jika data dokumen terbungkus dalam properti internal '.data' atau '_data'
+          const innerData = itemData && typeof itemData === 'object'
+            ? (itemData.data || itemData._data || itemData)
+            : {};
+
+          return {
+            id: key,
+            ...innerData
+          };
+        });
       }
 
-      // 2. Normalisasi agar adaptif terhadap field Bahasa Indonesia maupun Inggris dari Flask
-      const cleanData = rawData.map(item => ({
-        id: item.id || item.uid || item._id, // Ambil ID dokumen dari Firestore yang bertipe acak
-        
-        // Cek map string nama / name
-        nama: item.nama || item.name || 'Tanpa Nama',
-        
-        // Cek map string kategori / category
-        kategori: item.kategori || item.category || '-',
-        
-        // Cek nilai harga / price dengan validasi undefined numeric safety
-        harga: item.harga !== undefined ? item.harga : (item.price !== undefined ? item.price : 0),
-        
-        // Cek nilai stok / stock dengan validasi undefined numeric safety
-        stok: item.stok !== undefined ? item.stok : (item.stock !== undefined ? item.stock : 0)
-      }));
+      // 2. Normalisasi properti objek secara mendalam untuk menangkap field bahasa Indonesia & Inggris
+      const cleanData = rawData.map(item => {
+        // Lacak pembungkus ekstra di dalam array item jika ada
+        const target = item.data || item._data || item;
+
+        return {
+          id: item.id || target.id || target.uid || target._id, // Ambil ID dokumen dari Firestore yang bertipe acak
+          
+          // Proteksi field nama / name produk
+          nama: target.nama || target.name || target.nama_produk || 'Tanpa Nama',
+          
+          // Proteksi field kategori / category
+          kategori: target.kategori || target.category || '-',
+          
+          // Proteksi nilai harga / price dengan numeric safety check
+          harga: target.harga !== undefined ? target.harga : (target.price !== undefined ? target.price : 0),
+          
+          // Proteksi nilai stok / stock dengan numeric safety check
+          stok: target.stok !== undefined ? target.stok : (target.stock !== undefined ? target.stock : 0)
+        };
+      });
 
       setProducts(cleanData);
     } catch (error) {
