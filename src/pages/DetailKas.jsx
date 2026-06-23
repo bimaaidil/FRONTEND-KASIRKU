@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaMoneyBillWave, FaArrowUp } from 'react-icons/fa';
 
+// Definisi variabel global backend untuk menghentikan ReferenceError saat kompilasi build Vercel
+const BASE_SERVER_URL = 'https://backend-kasirku.vercel.app';
+
 const DetailKas = () => {
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
@@ -31,14 +34,15 @@ const DetailKas = () => {
         {/* Content List */}
         <div className="container-fluid py-3 px-2 px-md-4" style={{ maxWidth: '800px' }}>
             {transactions.length > 0 ? (
-                transactions.map((item) => {
+                transactions.map((item, index) => {
                     const isMasuk = item.type === 'Uang Masuk';
                     return (
-                        <div key={item.id} className="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
+                        // Ditambahkan fallback item.id || index untuk menjamin keunikan key iterasi DOM
+                        <div key={item.id || index} className="card border-0 shadow-sm rounded-3 mb-3 overflow-hidden">
                             
                             {/* Baris Atas: Icon, Judul, Harga */}
                             <div className="p-3 px-md-4 d-flex justify-content-between align-items-center bg-white">
-                                <div className="d-flex align-items-center gap-2.5">
+                                <div className="d-flex align-items-center gap-2">
                                     <div 
                                       className="d-flex align-items-center justify-content-center rounded-3" 
                                       style={{ 
@@ -58,7 +62,7 @@ const DetailKas = () => {
 
                             {/* Baris Detail: Keterangan Waktu & User */}
                             <div className="p-3 px-md-4 bg-light-subtle border-top border-light" style={{ paddingLeft: window.innerWidth > 576 ? '75px' : '15px' }}>
-                                <small className="text-muted fw-bold d-block mb-1.5" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>RINCIAN DATA :</small>
+                                <small className="text-muted fw-bold d-block mb-2" style={{ fontSize: '11px', letterSpacing: '0.5px' }}>RINCIAN DATA :</small>
                                 <div className="d-flex justify-content-between small mb-1">
                                     <span className="text-secondary">Waktu Transaksi</span>
                                     <span className="fw-semibold text-dark text-end">{item.date} | {item.time}</span>

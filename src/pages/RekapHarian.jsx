@@ -16,7 +16,13 @@ const RekapHarian = () => {
         return;
     }
     const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
-    const filtered = allHistory.filter(item => item.day === selectedDay);
+    
+    // Normalisasi string huruf kecil untuk menghindari sensitivitas karakter (case-sensitive)
+    const filtered = allHistory.filter(item => {
+        if (!item.day) return false;
+        return item.day.toLowerCase() === selectedDay.toLowerCase();
+    });
+    
     setCurrentData(filtered);
     setShowReport(true); 
   };
@@ -26,7 +32,7 @@ const RekapHarian = () => {
       setShowReport(false); 
   };
 
-  const totalPendapatan = currentData.reduce((acc, curr) => acc + curr.subtotal, 0);
+  const totalPendapatan = currentData.reduce((acc, curr) => acc + (Number(curr.subtotal) || 0), 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0 }).format(num);
 
   return (
@@ -64,7 +70,8 @@ const RekapHarian = () => {
                 <tbody>
                     {showReport && currentData.length > 0 ? (
                         currentData.map((item, index) => (
-                            <tr key={item.id} className="border-top">
+                            // Menggunakan fallback index jika item.id bernilai kosong/undefined
+                            <tr key={item.id || index} className="border-top">
                                 <td className="py-3 text-muted">{index + 1}</td>
                                 <td className="py-3 text-secondary">{item.date}</td>
                                 <td className="py-3 fw-medium text-dark">{item.product}</td>

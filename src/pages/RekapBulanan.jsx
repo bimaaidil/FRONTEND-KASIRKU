@@ -20,14 +20,24 @@ const RekapBulanan = () => {
         return;
     }
     const allHistory = JSON.parse(localStorage.getItem('historyTransaksi')) || [];
+    
+    // Pembenahan deteksi string bulan secara dinamis agar aman dari format tanggal / maupun spasi text
     const filtered = allHistory.filter(item => {
-        const itemMonth = item.date.split('/')[1]; 
+        if (!item.date) return false;
+        
+        // Cek jika format string tanggal mengandung nama bulan (ex: "23 Juni 2026")
+        if (item.date.includes(selectedMonth)) {
+            return true;
+        }
+
+        // Jalankan opsi pencocokan angka jika format string tanggal berupa angka (ex: "23/06/2026")
         const monthsMap = {
             'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04',
             'Mei': '05', 'Juni': '06', 'Juli': '07', 'Agustus': '08',
             'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
         };
-        return itemMonth === monthsMap[selectedMonth];
+        const targetNumber = monthsMap[selectedMonth];
+        return item.date.split('/')[1] === targetNumber || item.date.split('-')[1] === targetNumber;
     });
 
     setDataBulanan(filtered);
@@ -45,7 +55,7 @@ const RekapBulanan = () => {
   const currentItems = showReport ? dataBulanan.slice(indexOfFirstItem, indexOfLastItem) : [];
   const totalPages = Math.ceil(dataBulanan.length / itemsPerPage);
 
-  const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + curr.subtotal, 0);
+  const totalPendapatan = dataBulanan.reduce((acc, curr) => acc + (Number(curr.subtotal) || 0), 0);
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
 
   return (
@@ -83,7 +93,7 @@ const RekapBulanan = () => {
                 <tbody>
                     {showReport && currentItems.length > 0 ? (
                         currentItems.map((item, index) => (
-                            <tr key={item.id} className="border-top">
+                            <tr key={item.id || index} className="border-top">
                                 <td className="py-3 text-muted">{indexOfFirstItem + index + 1}</td>
                                 <td className="py-3 text-secondary">{item.date}</td>
                                 <td className="py-3 fw-medium text-dark">{item.product}</td>
@@ -110,7 +120,7 @@ const RekapBulanan = () => {
                   </div>
 
                   {totalPages > 1 && (
-                      <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-1.5 mt-2">
+                      <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-2 mt-2">
                           <button className="btn btn-light btn-sm border d-flex align-items-center justify-content-center" style={{ width: '35px', height: '35px' }} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                               <FaChevronLeft size={10} />
                           </button>

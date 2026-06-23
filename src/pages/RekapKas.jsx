@@ -62,11 +62,11 @@ const RekapKas = () => {
 
         {/* User Navigation Card */}
         <div 
-            className="card border-0 shadow-sm p-3 px-4 rounded-3 bg-light-subtle d-flex flex-row justify-content-between align-items-center mb-5"
+            className="card border-0 shadow-sm p-3 px-4 rounded-3 bg-white d-flex flex-row justify-content-between align-items-center mb-5"
             style={{ cursor: 'pointer', transition: '0.2s' }}
             onClick={() => navigate('/detail-kas')}
             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#eef2f7'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = ''}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
         >
             <span className="fw-bold text-dark" style={{ fontSize: '16px' }}>{userName}</span>
             <div className="d-flex align-items-center gap-2">
