@@ -12,6 +12,18 @@ const RekapHarian = () => {
   const [currentData, setCurrentData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Fungsi helper untuk mengonversi format tanggal YYYY-MM-DD menjadi nama hari Indonesia
+  const getDayNameFromDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const dateObj = new Date(dateString);
+      // Mengembalikan nama hari dalam bahasa Indonesia (Senin, Selasa, dst.)
+      return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(dateObj);
+    } catch (e) {
+      return '';
+    }
+  };
+
   const handleTampilkan = async () => {
     if (selectedDay === '') {
         alert("Silakan pilih hari terlebih dahulu!");
@@ -22,16 +34,52 @@ const RekapHarian = () => {
     setShowReport(false);
 
     try {
-        // Ambil data transaksi langsung dari server cloud database
+        // 1. Ambil semua data transaksi langsung dari cloud database
         const allHistory = await getTransaksiLogs();
         
-        // Memastikan pencocokan huruf kecil/besar berjalan aman
-        const filtered = allHistory.filter(item => {
-            if (!item.day) return false;
-            return item.day.toLowerCase() === selectedDay.toLowerCase();
+        // 2. Filter dokumen berdasarkan konversi nama hari dari field 'date'
+        const filteredTransactions = allHistory.filter(item => {
+            if (!item.date) return false;
+            
+            // Konversi tanggal (ex: "2026-06-23") menjadi nama hari (ex: "Selasa")
+            const dayName = getDayNameFromDate(item.date);
+            return dayName.toLowerCase() === selectedDay.toLowerCase();
         });
         
-        setCurrentData(filtered);
+        // 3. Bongkar array 'items' bertingkat menjadi baris produk yang flat
+        const flattenedItems = [];
+        filteredTransactions.forEach(transaksi => {
+            const productItems = Array.isArray(transaksi.items) ? transaksi.items : [];
+            
+            productItems.forEach(subItem => {
+                const qty = Number(subItem.qty || subItem.quantity || 0);
+                const price = Number(subItem.price || subItem.harga || 0);
+                const rowSubtotal = qty * price;
+
+                flattenedItems.push({
+                    id: transaksi.id,
+                    date: transaksi.date,
+                    product: subItem.name || subItem.nama || subItem.product || 'Produk Tidak Diketahui',
+                    qty: qty,
+                    price: price,
+                    subtotal: rowSubtotal > 0 ? rowSubtotal : (Number(transaksi.subtotal) || 0)
+                });
+            });
+            
+            // Antisipasi jika data array items kosong
+            if (productItems.length === 0) {
+                flattenedItems.push({
+                    id: transaksi.id,
+                    date: transaksi.date,
+                    product: transaksi.product || 'Transaksi POS',
+                    qty: Number(transaksi.qty || 1),
+                    price: Number(transaksi.price || transaksi.subtotal || 0),
+                    subtotal: Number(transaksi.subtotal || 0)
+                });
+            }
+        });
+
+        setCurrentData(flattenedItems);
         setShowReport(true); 
     } catch (error) {
         alert("Gagal memuat laporan harian dari server cloud.");
@@ -51,7 +99,9 @@ const RekapHarian = () => {
   return (
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
-      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0' }}>
+      
+      {/* Container utama dengan pembatas luapan layout horizontal */}
+      <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0', maxWidth: '100%', overflowX: 'hidden' }}>
         <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Harian (Cloud Database)</h2>
 
         {/* HARIAN INPUT FILTER RESPONSIVE */}
@@ -69,17 +119,17 @@ const RekapHarian = () => {
         </div>
 
         {/* DATAGRID TABLE RESPONSIVE */}
-        <div className="card border-0 shadow-sm p-4 bg-white rounded-3" style={{ minHeight: '250px' }}>
-          <div className="table-responsive">
-            <table className="table align-middle text-nowrap m-0" style={{ fontSize: '14px' }}>
+        <div className="card border-0 shadow-sm p-3 p-md-4 bg-white rounded-3" style={{ minHeight: '250px' }}>
+          <div className="table-responsive" style={{ width: '100%', overflowX: 'auto' }}>
+            <table className="table align-middle m-0" style={{ fontSize: '14px', width: '100%', tableLayout: 'fixed' }}>
                 <thead>
                     <tr className="text-secondary small text-uppercase">
-                        <th className="border-0 pb-3">No</th>
-                        <th className="border-0 pb-3">Tanggal Transaksi</th>
-                        <th className="border-0 pb-3">Produk</th>
-                        <th className="border-0 pb-3 text-center">Jumlah</th>
-                        <th className="border-0 pb-3 text-center">Harga</th>
-                        <th className="border-0 pb-3 text-center">Sub Total</th>
+                        <th style={{ width: '60px', paddingBottom: '1rem' }} className="border-0">No</th>
+                        <th style={{ width: '130px', paddingBottom: '1rem' }} className="border-0">Tanggal Transaksi</th>
+                        <th style={{ width: '250px', paddingBottom: '1rem' }} className="border-0">Produk</th>
+                        <th style={{ width: '90px', paddingBottom: '1rem' }} className="border-0 text-center">Jumlah</th>
+                        <th style={{ width: '140px', paddingBottom: '1rem' }} className="border-0 text-center">Harga</th>
+                        <th style={{ width: '150px', paddingBottom: '1rem' }} className="border-0 text-center">Sub Total</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,13 +142,13 @@ const RekapHarian = () => {
                         </tr>
                     ) : showReport && currentData.length > 0 ? (
                         currentData.map((item, index) => (
-                            <tr key={item.id || index} className="border-top">
+                            <tr key={`${item.id}-${index}`} className="border-top">
                                 <td className="py-3 text-muted">{index + 1}</td>
-                                <td className="py-3 text-secondary">{item.date}</td>
-                                <td className="py-3 fw-medium text-dark">{item.product || item.product_name || item.nama}</td>
-                                <td className="py-3 text-center text-dark">{item.qty || item.quantity}</td>
-                                <td className="py-3 text-center text-secondary">Rp {formatRupiah(item.price || item.harga)}</td>
-                                <td className="py-3 text-center text-primary fw-medium">Rp {formatRupiah(item.subtotal)}</td>
+                                <td className="py-3 text-secondary text-truncate">{item.date}</td>
+                                <td className="py-3 fw-medium text-dark text-wrap" style={{ wordBreak: 'break-word' }}>{item.product}</td>
+                                <td className="py-3 text-center text-dark font-monospace">{item.qty}</td>
+                                <td className="py-3 text-center text-secondary font-monospace">Rp {formatRupiah(item.price)}</td>
+                                <td className="py-3 text-center text-primary fw-medium font-monospace">Rp {formatRupiah(item.subtotal)}</td>
                             </tr>
                         ))
                     ) : (
@@ -114,7 +164,7 @@ const RekapHarian = () => {
 
           {showReport && currentData.length > 0 && !loading && (
               <div className="text-end fw-bold text-dark mt-4" style={{ fontSize: '16px' }}>
-                  Total Pendapatan {selectedDay}: <span className="text-primary">Rp {formatRupiah(totalPendapatan)}</span>
+                  Total Pendapatan Hari {selectedDay}: <span className="text-primary">Rp {formatRupiah(totalPendapatan)}</span>
               </div>
           )}
         </div>
