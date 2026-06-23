@@ -19,17 +19,34 @@ const KelolaProduk = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getProducts();
-      
-      if (Array.isArray(data)) {
-        setProducts(data);
-      } else if (data && Array.isArray(data.data)) {
-        setProducts(data.data);
-      } else if (data && Array.isArray(data.products)) {
-        setProducts(data.products);
-      } else {
-        setProducts([]); 
+      const response = await getProducts();
+      let rawData = [];
+
+      // 1. Validasi dinamis untuk membaca berbagai bentuk response JSON dari Flask
+      if (Array.isArray(response)) {
+        rawData = response;
+      } else if (response && Array.isArray(response.data)) {
+        rawData = response.data;
+      } else if (response && Array.isArray(response.products)) {
+        rawData = response.products;
+      } else if (response && typeof response === 'object') {
+        // Jika Flask mengembalikan data bertipe Object Map (kunci berupa ID Dokumen Firestore)
+        rawData = Object.keys(response).map(key => ({
+          id: key,
+          ...response[key]
+        }));
       }
+
+      // 2. Normalisasi properti objek agar seragam dan aman saat looping render DOM
+      const cleanData = rawData.map(item => ({
+        id: item.id || item.uid || item._id, // Ambil ID dokumen dari Firestore yang bertipe acak
+        nama: item.nama || '',
+        kategori: item.kategori || '-',
+        harga: item.harga || 0,
+        stok: item.stok || 0
+      }));
+
+      setProducts(cleanData);
     } catch (error) {
       console.error("Error load produk:", error);
       setProducts([]); 
@@ -46,13 +63,14 @@ const KelolaProduk = () => {
     if (window.confirm(`Yakin ingin menghapus ${nama}?`)) {
       try {
         await deleteProduct(id);
-        fetchProducts(); 
+        fetchProducts(); // Refresh data otomatis setelah berhasil menghapus
       } catch (error) {
         alert("Gagal menghapus produk");
       }
     }
   };
 
+  // Memastikan filter pencarian berjalan aman menggunakan data ternormalisasi
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => product.nama?.toLowerCase().includes(searchTerm.toLowerCase()))
     : [];
