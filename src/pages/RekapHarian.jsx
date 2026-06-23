@@ -1,5 +1,5 @@
 // src/pages/RekapHarian.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import { Loader } from 'lucide-react';
 
@@ -11,13 +11,26 @@ const RekapHarian = () => {
   const [showReport, setShowReport] = useState(false);
   const [currentData, setCurrentData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentMonthName, setCurrentMonthName] = useState('');
+  const [currentMonthNumeric, setCurrentMonthNumeric] = useState('');
+
+  // Otomatis deteksi bulan sekarang saat halaman dimuat
+  useEffect(() => {
+    const date = new Date();
+    // Mengambil nama bulan (ex: "Juni")
+    const monthName = new Intl.DateTimeFormat('id-ID', { month: 'long' }).format(date);
+    // Mengambil format angka bulan (ex: "06")
+    const monthNumeric = String(date.getMonth() + 1).padStart(2, '0');
+    
+    setCurrentMonthName(monthName);
+    setCurrentMonthNumeric(monthNumeric);
+  }, []);
 
   // Fungsi helper untuk mengonversi format tanggal YYYY-MM-DD menjadi nama hari Indonesia
   const getDayNameFromDate = (dateString) => {
     if (!dateString) return '';
     try {
       const dateObj = new Date(dateString);
-      // Mengembalikan nama hari dalam bahasa Indonesia (Senin, Selasa, dst.)
       return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(dateObj);
     } catch (e) {
       return '';
@@ -34,19 +47,26 @@ const RekapHarian = () => {
     setShowReport(false);
 
     try {
-        // 1. Ambil semua data transaksi langsung dari cloud database
         const allHistory = await getTransaksiLogs();
         
-        // 2. Filter dokumen berdasarkan konversi nama hari dari field 'date'
+        // Filter dokumen berdasarkan nama hari DAN harus berada di bulan berjalan saat ini
         const filteredTransactions = allHistory.filter(item => {
             if (!item.date) return false;
             
-            // Konversi tanggal (ex: "2026-06-23") menjadi nama hari (ex: "Selasa")
+            // 1. Validasi filter Bulan (Memastikan transaksi berasal dari bulan sekarang)
+            // Mendukung format ISO "2026-06-23" maupun format teks "23 Juni 2026"
+            const isMatchMonth = item.date.includes(currentMonthName) || 
+                                 item.date.split('-')[1] === currentMonthNumeric || 
+                                 item.date.split('/')[1] === currentMonthNumeric;
+            
+            if (!isMatchMonth) return false;
+
+            // 2. Validasi filter Hari
             const dayName = getDayNameFromDate(item.date);
             return dayName.toLowerCase() === selectedDay.toLowerCase();
         });
         
-        // 3. Bongkar array 'items' bertingkat menjadi baris produk yang flat
+        // Bongkar array 'items' bertingkat menjadi baris produk flat
         const flattenedItems = [];
         filteredTransactions.forEach(transaksi => {
             const productItems = Array.isArray(transaksi.items) ? transaksi.items : [];
@@ -66,7 +86,6 @@ const RekapHarian = () => {
                 });
             });
             
-            // Antisipasi jika data array items kosong
             if (productItems.length === 0) {
                 flattenedItems.push({
                     id: transaksi.id,
@@ -100,7 +119,6 @@ const RekapHarian = () => {
     <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
       <Sidebar />
       
-      {/* Container utama dengan pembatas luapan layout horizontal */}
       <div className="flex-grow-1 p-3 p-md-4" style={{ marginLeft: window.innerWidth > 768 ? '260px' : '0', maxWidth: '100%', overflowX: 'hidden' }}>
         <h2 className="fw-bold text-dark mb-4" style={{ fontSize: '20px' }}>Data Penjualan Harian (Cloud Database)</h2>
 
@@ -112,7 +130,8 @@ const RekapHarian = () => {
                     <option key={day} value={day}>{day}</option>
                 ))}
             </select>
-            <input type="text" value="Bulan Sekarang" readOnly className="form-control bg-light text-center py-2" style={{ width: window.innerWidth > 576 ? '140px' : '100%' }} />
+            {/* Input otomatis membaca nama bulan berjalan secara dinamis */}
+            <input type="text" value={`Bulan ${currentMonthName}`} readOnly className="form-control bg-light text-center py-2 fw-medium text-secondary" style={{ width: window.innerWidth > 576 ? '160px' : '100%' }} />
             <button className="btn btn-primary fw-semibold py-2 px-4 rounded-3 text-nowrap w-100 w-sm-auto d-flex align-items-center justify-content-center gap-2" onClick={handleTampilkan} disabled={loading}>
                 {loading ? 'Memuat Data...' : 'Tampilkan Laporan'}
             </button>
@@ -154,7 +173,7 @@ const RekapHarian = () => {
                     ) : (
                         <tr>
                             <td colSpan="6" className="text-center text-muted py-5">
-                                {showReport ? "Tidak ada transaksi pada hari ini di cloud database." : "Silakan pilih hari untuk melihat rekap."}
+                                {showReport ? `Tidak ada transaksi pada hari ini di bulan ${currentMonthName}.` : "Silakan pilih hari untuk melihat rekap."}
                             </td>
                         </tr>
                     )}
@@ -164,7 +183,7 @@ const RekapHarian = () => {
 
           {showReport && currentData.length > 0 && !loading && (
               <div className="text-end fw-bold text-dark mt-4" style={{ fontSize: '16px' }}>
-                  Total Pendapatan Hari {selectedDay}: <span className="text-primary">Rp {formatRupiah(totalPendapatan)}</span>
+                  Total Pendapatan Hari {selectedDay} ({currentMonthName}): <span className="text-primary">Rp {formatRupiah(totalPendapatan)}</span>
               </div>
           )}
         </div>
