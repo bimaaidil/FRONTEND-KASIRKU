@@ -20,55 +20,15 @@ const KelolaProduk = () => {
     setLoading(true);
     try {
       const response = await getProducts();
-      let rawData = [];
-
-      // 1. Validasi dinamis untuk membaca berbagai bentuk response JSON dari Flask
+      
+      // Karena backend sudah mengembalikan array bersih, kita langsung masukkan ke state
       if (Array.isArray(response)) {
-        rawData = response;
+        setProducts(response);
       } else if (response && Array.isArray(response.data)) {
-        rawData = response.data;
-      } else if (response && Array.isArray(response.products)) {
-        rawData = response.products;
-      } else if (response && typeof response === 'object') {
-        // Jika Flask mengembalikan data bertipe Object Map (kunci berupa ID Dokumen Firestore)
-        rawData = Object.keys(response).map(key => {
-          const itemData = response[key];
-          
-          // Membongkar jika data dokumen terbungkus dalam properti internal '.data' atau '_data'
-          const innerData = itemData && typeof itemData === 'object'
-            ? (itemData.data || itemData._data || itemData)
-            : {};
-
-          return {
-            id: key,
-            ...innerData
-          };
-        });
+        setProducts(response.data);
+      } else {
+        setProducts([]);
       }
-
-      // 2. Normalisasi properti objek secara mendalam untuk menangkap field bahasa Indonesia & Inggris
-      const cleanData = rawData.map(item => {
-        // Lacak pembungkus ekstra di dalam array item jika ada
-        const target = item.data || item._data || item;
-
-        return {
-          id: item.id || target.id || target.uid || target._id, // Ambil ID dokumen dari Firestore yang bertipe acak
-          
-          // Proteksi field nama / name produk
-          nama: target.nama || target.name || target.nama_produk || 'Tanpa Nama',
-          
-          // Proteksi field kategori / category
-          kategori: target.kategori || target.category || '-',
-          
-          // Proteksi nilai harga / price dengan numeric safety check
-          harga: target.harga !== undefined ? target.harga : (target.price !== undefined ? target.price : 0),
-          
-          // Proteksi nilai stok / stock dengan numeric safety check
-          stok: target.stok !== undefined ? target.stok : (target.stock !== undefined ? target.stock : 0)
-        };
-      });
-
-      setProducts(cleanData);
     } catch (error) {
       console.error("Error load produk:", error);
       setProducts([]); 
@@ -92,7 +52,7 @@ const KelolaProduk = () => {
     }
   };
 
-  // Memastikan filter pencarian berjalan aman menggunakan nama produk yang ternormalisasi
+  // Memastikan filter pencarian berjalan aman menggunakan data properti nama produk
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => product.nama?.toLowerCase().includes(searchTerm.toLowerCase()))
     : [];
