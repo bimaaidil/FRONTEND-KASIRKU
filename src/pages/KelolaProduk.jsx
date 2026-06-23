@@ -37,13 +37,21 @@ const KelolaProduk = () => {
         }));
       }
 
-      // 2. Normalisasi properti objek agar seragam dan aman saat looping render DOM
+      // 2. Normalisasi agar adaptif terhadap field Bahasa Indonesia maupun Inggris dari Flask
       const cleanData = rawData.map(item => ({
         id: item.id || item.uid || item._id, // Ambil ID dokumen dari Firestore yang bertipe acak
-        nama: item.nama || '',
-        kategori: item.kategori || '-',
-        harga: item.harga || 0,
-        stok: item.stok || 0
+        
+        // Cek map string nama / name
+        nama: item.nama || item.name || 'Tanpa Nama',
+        
+        // Cek map string kategori / category
+        kategori: item.kategori || item.category || '-',
+        
+        // Cek nilai harga / price dengan validasi undefined numeric safety
+        harga: item.harga !== undefined ? item.harga : (item.price !== undefined ? item.price : 0),
+        
+        // Cek nilai stok / stock dengan validasi undefined numeric safety
+        stok: item.stok !== undefined ? item.stok : (item.stock !== undefined ? item.stock : 0)
       }));
 
       setProducts(cleanData);
@@ -70,7 +78,7 @@ const KelolaProduk = () => {
     }
   };
 
-  // Memastikan filter pencarian berjalan aman menggunakan data ternormalisasi
+  // Memastikan filter pencarian berjalan aman menggunakan nama produk yang ternormalisasi
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => product.nama?.toLowerCase().includes(searchTerm.toLowerCase()))
     : [];
