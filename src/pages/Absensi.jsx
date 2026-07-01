@@ -167,7 +167,7 @@ const Absensi = () => {
       width: '100%',
       overflowX: 'hidden'
     },
-    header: { display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-end' : 'center', gap: '15px', marginBottom: '30px' },
+    header: { display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: '15px', marginBottom: '30px' },
     pageTitle: { fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0, paddingLeft: isMobile ? '45px' : '0' },
     profileNav: { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', padding: '5px 10px', borderRadius: '10px', transition: '0.3s' },
     actionCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '20px', marginBottom: '30px' },
@@ -192,10 +192,13 @@ const Absensi = () => {
 
       <div style={styles.mainContent}>
         <div style={styles.header}>
-          <div>
-             <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
-             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280', paddingLeft: '0' }}>Selamat Datang, <strong>{userName}</strong></p>
+          
+          {/* ==================== BAGIAN YANG DIUBAH (MULAI) ==================== */}
+          <div style={{ width: '100%', textAlign: 'right', paddingRight: isMobile ? '15px' : '0' }}>
+             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Absensi & Monitoring</h2>
+             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
+          {/* ==================== BAGIAN YANG DIUBAH (SELESAI) ==================== */}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
             <div style={{ fontSize: '14px', color: '#6b7280', textAlign: isMobile ? 'left' : 'right' }}>
