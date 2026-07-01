@@ -192,13 +192,10 @@ const Absensi = () => {
 
       <div style={styles.mainContent}>
         <div style={styles.header}>
-          
-          {/* ==================== BAGIAN YANG DIUBAH (MULAI) ==================== */}
-          <div style={{ width: '100%', textAlign: 'right', paddingRight: isMobile ? '15px' : '0' }}>
-             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Absensi & Monitoring</h2>
-             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>Selamat Datang, <strong>{userName}</strong></p>
+          <div>
+             <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
+             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280', paddingLeft: isMobile ? '45px' : '0' }}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
-          {/* ==================== BAGIAN YANG DIUBAH (SELESAI) ==================== */}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
             <div style={{ fontSize: '14px', color: '#6b7280', textAlign: isMobile ? 'left' : 'right' }}>
