@@ -166,9 +166,10 @@ const Transaksi = () => {
   };
 
   const handleGoToCart = () => {
-    if (cart.length === 0) return alert("Keranjang kosong!");
-    localStorage.setItem('cartData', JSON.stringify(cart));
-    navigate('/keranjang');
+if (jumlah <= 0) {
+    alert("Eror: Jumlah item yang dimasukkan tidak boleh kurang dari atau sama dengan 1!");
+    return; // Menghentikan eksekusi fungsi
+  }
   };
 
   const handleLoadOrder = (order) => {
