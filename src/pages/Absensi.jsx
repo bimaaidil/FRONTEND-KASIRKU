@@ -194,7 +194,7 @@ const Absensi = () => {
         <div style={styles.header}>
           <div>
              <h2 style={styles.pageTitle}>Absensi & Monitoring</h2>
-             <p style={{ margin: 0, fontSize: '14px', color: '#6b7280', paddingLeft: isMobile ? '45px' : '0' }}>Selamat Datang, <strong>{userName}</strong></p>
+             <p style={{ margin: 30, fontSize: '14px', color: '#6b7280', paddingLeft: isMobile ? '45px' : '0' }}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
