@@ -53,7 +53,6 @@ const Absensi = () => {
       setEmployees(filteredEmps);
       
       if (filteredEmps.length > 0) {
-        // Set default ke opsi "ALL" jika yang login adalah Admin agar tabel menarik semua data harian
         setSelectedEmp(userRole === 'Admin' ? 'ALL' : filteredEmps[0].id);
       }
     } catch (error) { 
@@ -67,7 +66,6 @@ const Absensi = () => {
     } catch (error) { 
       console.error("Gagal ambil riwayat kehadiran:", error);
     } finally { 
-      // PERBAIKAN UTAMA: Mengganti kata kunci 'filter' yang salah ketik kemarin menjadi 'finally' agar lolos build Vercel!
       setLoading(false); 
     }
   };
@@ -156,6 +154,9 @@ const Absensi = () => {
     }
   };
 
+  // =========================================================================
+  // KUMPULAN DESIGN STYLE CSS (Ubah Tampilan, Warna Tombol, Ukuran di Sini)
+  // =========================================================================
   const styles = {
     container: { display: 'flex', minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" },
     mainContent: { 
@@ -172,10 +173,13 @@ const Absensi = () => {
     profileNav: { display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', padding: '5px 10px', borderRadius: '10px', transition: '0.3s' },
     actionCard: { backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: '20px', marginBottom: '30px' },
     select: { padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', width: isMobile ? '100%' : '300px', outline: 'none', backgroundColor: '#f9fafb' },
+    
+    // --- ATUR WARNA TOMBOL DI SINI ---
     btnIn: { backgroundColor: '#2563eb', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: 'center' },
     btnOut: { backgroundColor: '#dc2626', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: 'center' },
     btnLembur: { backgroundColor: '#f59e0b', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: 'center' },
     btnDone: { backgroundColor: '#16a34a', color: 'white', padding: '12px 30px', borderRadius: '8px', border: 'none', cursor: 'not-allowed', fontWeight: 'bold', fontSize: '14px', display: 'flex', gap: '8px', alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: 'center' },
+    
     card: { backgroundColor: 'white', borderRadius: '12px', padding: isMobile ? '15px' : '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', marginBottom: '#40px' },
     tableHeader: { textAlign: 'left', padding: '16px', fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #f3f4f6' },
     tableCell: { padding: '16px', fontSize: '14px', color: '#374151', borderBottom: '1px solid #f9fafb' },
@@ -193,13 +197,15 @@ const Absensi = () => {
       <div style={styles.mainContent}>
         <div style={styles.header}>
           
-          {/* ==================== BAGIAN YANG DIUBAH (MULAI) ==================== */}
+          {/* ========================================================================= */}
+          {/* 1. DETEKSI LOKASI: UTAMA - JUDUL HALAMAN ABSENSI & MONITORING             */}
+          {/* ========================================================================= */}
           <div style={{ width: '100%', textAlign: 'right', paddingRight: isMobile ? '15px' : '0' }}>
              <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>Absensi & Monitoring</h2>
              <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>Selamat Datang, <strong>{userName}</strong></p>
           </div>
-          {/* ==================== BAGIAN YANG DIUBAH (SELESAI) ==================== */}
 
+          {/* --- AREA TAMPILAN JAM & TANGGAL REAL-TIME --- */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
             <div style={{ fontSize: '14px', color: '#6b7280', textAlign: isMobile ? 'left' : 'right' }}>
               {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
@@ -207,6 +213,7 @@ const Absensi = () => {
               {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
             </div>
             
+            {/* --- NAVIGASI PROFIL --- */}
             <div style={styles.profileNav} onClick={() => navigate('/profile')}>
               <span style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }} className="d-none d-sm-inline">{userName}</span>
               <FaUserCircle style={{ fontSize: '32px', color: '#154784' }} />
@@ -214,12 +221,16 @@ const Absensi = () => {
           </div>
         </div>
 
+        {/* ========================================================================= */}
+        {/* 2. DETEKSI LOKASI: PANEL AKSI (PILIH KARYAWAN & TOMBOL ABSENSI)           */}
+        {/* ========================================================================= */}
         <div style={styles.actionCard}>
             <div style={{ width: isMobile ? '100%' : 'auto' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#374151' }}>
                   {userRole === 'Admin' ? 'Admin Monitoring (Filter Karyawan)' : 'Konfirmasi Kehadiran'}
                 </label>
                 
+                {/* --- SELEKSI DROPDOWN KARYAWAN --- */}
                 {userRole === 'Admin' ? (
                   <select style={styles.select} value={selectedEmp} onChange={(e) => setSelectedEmp(e.target.value)}>
                       <option value="ALL">-- Tampilkan Semua Karyawan --</option>
@@ -240,6 +251,7 @@ const Absensi = () => {
                 )}
             </div>
             
+            {/* --- LOGIKA PERUBAHAN TOMBOL SECARA DINAMIS (KASIR ONLY) --- */}
             {userRole !== 'Admin' && (
               <div style={{ width: isMobile ? '100%' : 'auto' }}>
                   {statusTombol === 'MASUK_REGULER' && (
@@ -274,6 +286,9 @@ const Absensi = () => {
             )}
         </div>
 
+        {/* ========================================================================= */}
+        {/* 3. DETEKSI LOKASI: TABEL TABUNGAN DATA - RIWAYAT ABSENSI HARIAN           */}
+        {/* ========================================================================= */}
         <div style={styles.card}>
             <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '20px', color: '#1f2937' }}>
                {userRole === 'Admin' ? 'Riwayat Hari Ini (Semua)' : 'Riwayat Absensi Saya'}
@@ -322,8 +337,12 @@ const Absensi = () => {
             )}
         </div>
 
+        {/* ========================================================================= */}
+        {/* 4. DETEKSI LOKASI: KHUSUS ROLE ADMIN - REKAPITULASI BULANAN & CETAK       */}
+        {/* ========================================================================= */}
         {userRole === 'Admin' && (
           <>
+            {/* GARIS PEMBATAS AREA PEMILIK */}
             <div style={{ borderTop: '2px dashed #cbd5e1', margin: '40px 0', position: 'relative' }}>
                 <span style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', backgroundColor: '#F5F6FA', padding: '0 15px', color: '#64748b', fontSize: '14px', fontWeight: '500' }}>AREA MONITORING PEMILIK</span>
             </div>
@@ -336,6 +355,7 @@ const Absensi = () => {
                         </h3>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: '5px 0 0 0' }}>Data kehadiran dan lembur untuk perhitungan gaji.</p>
                     </div>
+                    {/* --- INPUT PILIHAN BULAN DAN TOMBOL CETAK --- */}
                     <div style={{display: 'flex', gap: '10px'}}>
                         <input 
                             type="month" 
