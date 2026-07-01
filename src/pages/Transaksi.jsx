@@ -381,7 +381,7 @@ const Transaksi = () => {
 
               {/* BATCH BUNDLING QUANTITY INPUT CONTAINER */}
               <div className="mb-3 text-center border-top pt-3">
-                <span className="fw-bold text-dark small" style={{ color: '#841570' }}>Jumlah Pesanan:</span>
+                <span className="fw-bold text-dark small" style={{ color: '#154784' }}>Jumlah Pesanan:</span>
                 <div className="d-flex align-items-center justify-content-center gap-3 mt-2">
                   <button type="button" className="btn btn-light border-secondary rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }} onClick={() => setCustomQty(q => Math.max(1, q - 1))}><FaMinus size={11}/></button>
                   <input 
