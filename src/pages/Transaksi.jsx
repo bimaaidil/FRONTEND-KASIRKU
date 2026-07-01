@@ -230,8 +230,8 @@ const Transaksi = () => {
         <div className="card border-0 bg-light shadow-sm p-3 mb-4 rounded-3">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
-              <h5 className="fw-bold m-0" style={{ color: '#075732', fontSize: '16px' }}>Status Kasir Toko</h5>
-              <span className="fw-bold small d-block mt-0.5" style={{ color: isKasirOpen ? '#2e7d32' : '#3b0592' }}>
+              <h5 className="fw-bold m-0" style={{ color: '#154784', fontSize: '16px' }}>Status Kasir Toko</h5>
+              <span className="fw-bold small d-block mt-0.5" style={{ color: isKasirOpen ? '#2e7d32' : '#d32f2f' }}>
                 {isKasirOpen ? `● BUKA (Petugas: ${currentShiftData?.petugas_buka})` : "● TUTUP (Offline)"}
               </span>
             </div>
