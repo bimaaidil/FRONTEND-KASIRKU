@@ -206,8 +206,8 @@ const Absensi = () => {
           </div>
 
           {/* --- AREA TAMPILAN JAM & TANGGAL REAL-TIME --- */}
-          <div style={{ display: 'flex', textAlign: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
-            <div style={{ fontSize: '14px', color: '#6b7280', textAlign: isMobile ? 'left' : 'right' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '30px', width: isMobile ? '100%' : 'auto', justifyContent: 'space-between', paddingLeft: isMobile ? '45px' : '0' }}>
+            <div style={{ fontSize: '14px', color: '#6b7280', textAlign: isMobile ? 'left' : 'left' }}>
               {waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} 
               <br /> 
               {waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
