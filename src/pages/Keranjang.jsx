@@ -234,9 +234,9 @@ const Keranjang = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F5F6FA', fontFamily: "'Poppins', sans-serif" }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#a2142493', fontFamily: "'Poppins', sans-serif" }}>
         {/* Header Responsif */}
-        <div className="px-3 py-3 d-flex align-items-center justify-content-between text-white" style={{ backgroundColor: '#760710' }}>
+        <div className="px-3 py-3 d-flex align-items-center justify-content-between text-white" style={{ backgroundColor: '#154784' }}>
             <button className="btn btn-link text-white text-decoration-none fw-bold p-0 d-flex align-items-center gap-2" onClick={() => navigate('/transaksi')}>
                 <FaArrowLeft /> Menu
             </button>
