@@ -302,7 +302,7 @@ const Transaksi = () => {
         {totalItems > 0 && isKasirOpen && (
             <div 
               className="position-fixed bottom-0 start-50 translate-middle-x bg-primary text-white d-flex align-items-center justify-content-center gap-2 p-3 shadow-lg border-0 w-100" 
-              style={{ backgroundColor: '#154784', zIndex: 1040, cursor: 'pointer', maxWidth: window.innerWidth > 768 ? '450px' : '100%', marginBottom: window.innerWidth > 768 ? '25px' : '0', borderRadius: window.innerWidth > 768 ? '15px' : '0' }} 
+              style={{ backgroundColor: '#841515', zIndex: 1040, cursor: 'pointer', maxWidth: window.innerWidth > 768 ? '450px' : '100%', marginBottom: window.innerWidth > 768 ? '25px' : '0', borderRadius: window.innerWidth > 768 ? '15px' : '0' }} 
               onClick={handleGoToCart}
             >
                 <FaShoppingCart />
