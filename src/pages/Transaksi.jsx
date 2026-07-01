@@ -302,7 +302,7 @@ const Transaksi = () => {
         {totalItems > 0 && isKasirOpen && (
             <div 
               className="position-fixed bottom-0 start-50 translate-middle-x bg-primary text-white d-flex align-items-center justify-content-center gap-2 p-3 shadow-lg border-0 w-100" 
-              style={{ backgroundColor: '#841515', zIndex: 1040, cursor: 'pointer', maxWidth: window.innerWidth > 768 ? '450px' : '100%', marginBottom: window.innerWidth > 768 ? '25px' : '0', borderRadius: window.innerWidth > 768 ? '15px' : '0' }} 
+              style={{ backgroundColor: '#154784', zIndex: 1040, cursor: 'pointer', maxWidth: window.innerWidth > 768 ? '450px' : '100%', marginBottom: window.innerWidth > 768 ? '25px' : '0', borderRadius: window.innerWidth > 768 ? '15px' : '0' }} 
               onClick={handleGoToCart}
             >
                 <FaShoppingCart />
@@ -381,7 +381,7 @@ const Transaksi = () => {
 
               {/* BATCH BUNDLING QUANTITY INPUT CONTAINER */}
               <div className="mb-3 text-center border-top pt-3">
-                <span className="fw-bold text-dark small" style={{ color: '#154784' }}>Jumlah Pesanan:</span>
+                <span className="fw-bold text-dark small" style={{ color: '#841570' }}>Jumlah Pesanan:</span>
                 <div className="d-flex align-items-center justify-content-center gap-3 mt-2">
                   <button type="button" className="btn btn-light border-secondary rounded-circle d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }} onClick={() => setCustomQty(q => Math.max(1, q - 1))}><FaMinus size={11}/></button>
                   <input 
